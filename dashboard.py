@@ -138,7 +138,7 @@ h2 { font-size: 20px !important; font-weight: 600 !important; }
   box-shadow: none !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="select"] {
-  background: var(--ap-card) !important;
+  background: var(--ap-bg) !important;
   border: 1px solid #e8e8ed !important;
   border-radius: 12px !important;
   box-shadow: 0 1px 4px rgba(0,0,0,.06) !important;
