@@ -45,6 +45,13 @@ st.markdown("""
 [data-testid="stSidebar"] {
   background: var(--ap-card) !important;
   border-right: 1px solid var(--ap-div) !important;
+  min-width: 240px !important;
+  max-width: 240px !important;
+}
+[data-testid="stSidebar"] > div {
+  min-width: 240px !important;
+  max-width: 240px !important;
+  width: 240px !important;
 }
 [data-testid="stSidebar"] * { font-family: var(--ap-font) !important; }
 [data-testid="stSidebar"] h1 {
@@ -52,6 +59,23 @@ st.markdown("""
   font-weight: 600 !important;
   letter-spacing: -0.3px !important;
   color: var(--ap-text) !important;
+}
+/* 侧边栏元素间距收紧 */
+[data-testid="stSidebarContent"] [data-testid="stVerticalBlock"] {
+  gap: 0 !important;
+}
+[data-testid="stSidebar"] hr {
+  margin: 6px 0 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+/* 立即抓取数据按钮全宽 */
+[data-testid="stSidebar"] .stButton,
+[data-testid="stSidebar"] .stButton > button {
+  width: 100% !important;
+  display: block !important;
 }
 [data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
   border: 1px solid #c7c7cc !important;
