@@ -80,12 +80,49 @@ h1, h2, h3 {
 h1 { font-size: 28px !important; font-weight: 700 !important; }
 h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-testid="stCaptionContainer"] p { color: var(--ap-sub) !important; font-size: 12px !important; }
+/* Multiselect 外框 */
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child {
+  border: 1px solid #e8e8ed !important;
+  border-radius: 12px !important;
+  background: #f5f5f7 !important;
+  box-shadow: none !important;
+  min-height: 40px !important;
+  padding: 4px 8px !important;
+}
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child:focus-within {
+  border-color: var(--ap-accent) !important;
+  box-shadow: 0 0 0 3px rgba(0,113,227,.12) !important;
+}
+/* Multiselect 标签 */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
-  background: var(--ap-bg) !important;
+  background: #ffffff !important;
   border: 1px solid #c7c7cc !important;
   border-radius: 20px !important;
   color: var(--ap-text) !important;
   font-size: 12px !important;
+  padding: 2px 4px 2px 10px !important;
+}
+[data-testid="stMultiSelect"] [data-baseweb="tag"] span {
+  color: var(--ap-text) !important;
+}
+[data-testid="stMultiSelect"] [data-baseweb="tag"] svg {
+  color: var(--ap-sub) !important;
+}
+/* Multiselect 下拉框 */
+[data-baseweb="popover"] [data-baseweb="menu"] {
+  border-radius: 12px !important;
+  border: 1px solid #e8e8ed !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12) !important;
+  overflow: hidden !important;
+}
+[data-baseweb="popover"] [role="option"] {
+  font-size: 14px !important;
+  color: var(--ap-text) !important;
+  border-radius: 0 !important;
+}
+[data-baseweb="popover"] [role="option"]:hover,
+[data-baseweb="popover"] [aria-selected="true"] {
+  background: rgba(0,113,227,.08) !important;
 }
 </style>
 """, unsafe_allow_html=True)
