@@ -352,7 +352,7 @@ def _ap_badge(chg: str) -> str:
         return f'<span style="{base};background:#fff0ef;color:#cc2200">▼{chg.replace("↓","")}</span>'
     if chg == "NEW":
         return f'<span style="{base};background:#e8f0ff;color:#0055cc">NEW</span>'
-    return f'<span style="{base};background:transparent;color:#c7c7cc">—</span>'
+    return f'<span style="{base};background:transparent;color:#b0b0b5;font-size:16px;font-weight:900;line-height:1">—</span>'
 
 
 def build_rank_change_map(db: Database, sel_date: str, rank_type: str) -> dict:
