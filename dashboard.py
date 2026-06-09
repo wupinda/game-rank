@@ -572,7 +572,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
         # 构建 HTML 表格（Apple 风格，无竖线）
         COL_W   = "width:220px;min-width:220px;max-width:220px"
-        th_base = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:11px;"
+        th_base = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:13px;"
                    f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
                    f"color:#6e6e73;{COL_W};background:#fff")
         th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
@@ -762,7 +762,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     _th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
                 f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
                 f"color:#6e6e73;width:56px;min-width:56px;background:#fff")
-    _th_game = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:11px;"
+    _th_game = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:13px;"
                 f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
                 f"color:#6e6e73;{_COL_W};background:#fff")
 
