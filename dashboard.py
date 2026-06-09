@@ -236,6 +236,18 @@ def _dynamic_card_html(sections: list) -> str:
     )
 
 
+def _static_chips_html(labels: list) -> str:
+    """卡片 header 右侧的静态渠道展示（只显示，不可交互）。"""
+    items = "".join(
+        f'<span style="display:inline-flex;align-items:center;'
+        f'background:#f5f5f7;border:1px solid #d2d2d7;border-radius:20px;'
+        f'padding:3px 10px;font-size:12px;color:#1d1d1f;'
+        f'font-family:{_AP_FONT}">{lbl}</span>'
+        for lbl in labels
+    )
+    return f'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">{items}</div>'
+
+
 def _ap_badge(chg: str) -> str:
     """返回 Apple 风格涨跌徽章 HTML。"""
     base = ("display:inline-flex;align-items:center;justify-content:center;"
@@ -416,18 +428,26 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
     # 多平台对比视图
     if not df.empty and sel_rank_type:
-        st.subheader(f"{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比")
-
         change_map = build_rank_change_map(db, sel_date, sel_rank_type)
 
         _all_plt_labels = sorted(plt_label_to_key.keys())
-        _sel_plt_labels = st.multiselect(
-            "展示渠道",
-            options=_all_plt_labels,
-            default=_all_plt_labels,
-            key=f"plt_sort_{sel_date}_{sel_rank_type}",
-            label_visibility="collapsed",
-        )
+
+        # 渠道选择：label + chips，无外框
+        _c1, _c2 = st.columns([1, 10])
+        with _c1:
+            st.markdown(
+                f'<div style="font-size:12px;color:#6e6e73;font-family:{_AP_FONT};'
+                f'padding:8px 0;white-space:nowrap">展示渠道</div>',
+                unsafe_allow_html=True,
+            )
+        with _c2:
+            _sel_plt_labels = st.multiselect(
+                "展示渠道",
+                options=_all_plt_labels,
+                default=_all_plt_labels,
+                key=f"plt_sort_{sel_date}_{sel_rank_type}",
+                label_visibility="collapsed",
+            )
         df_view = df[df["平台"].isin(_sel_plt_labels)] if _sel_plt_labels else df
 
         # pivot 使用原始游戏名（不混入变化标记）
@@ -519,25 +539,38 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
 
+        title_str   = f'{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比'
+        chips_html  = _static_chips_html(game_cols)
         table_html = f"""
         <style>
           .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
           .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
         </style>
-        <div style="overflow:auto;max-height:620px;border:1px solid #e8e8ed;border-radius:18px;
-                    box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
-          <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;table-layout:fixed;
-                 font-family:{_AP_FONT}">
-            <thead style="position:sticky;top:0;background:#fff;z-index:1">
-              <tr>{header}</tr>
-            </thead>
-            <tbody>{rows_html}</tbody>
-          </table>
+        <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                    overflow:hidden;border:1px solid #e8e8ed;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      padding:14px 20px;border-bottom:1px solid #e8e8ed">
+            <span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">
+              {title_str}
+            </span>
+            {chips_html}
+          </div>
+          <div style="overflow:auto;max-height:600px">
+            <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
+                   table-layout:fixed;font-family:{_AP_FONT};width:100%">
+              <thead style="position:sticky;top:0;background:#fff;z-index:1">
+                <tr>{header}</tr>
+              </thead>
+              <tbody>{rows_html}</tbody>
+            </table>
+          </div>
+          <div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;
+                      color:#6e6e73;font-family:{_AP_FONT}">
+            ▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化
+          </div>
         </div>
         """
         st.html(table_html)
-        if change_map:
-            st.caption("▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化")
 
     # 导出
     if not df.empty:
@@ -660,8 +693,6 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     # Build change map (compared to previous day) — reuse existing util
     change_map = build_rank_change_map(db, active_date, rank_type_ov)
 
-    st.subheader("移动平台排行榜")
-
     # HTML table（Apple 风格）
     _DIVIDER = "border-right:1px solid #e8e8ed"
     _COL_W   = "width:220px;min-width:220px;max-width:220px"
@@ -671,7 +702,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     _th_game = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;"
                 f"font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{_COL_W};{_DIVIDER}")
 
-    def _render_table(rank_maps, plt_keys, plt_lbls, max_rank):
+    def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title=""):
         header = f'<th style="{_th_rank}">排名</th>' + "".join(
             f'<th style="{_th_game}">{lbl}</th>' for lbl in plt_lbls
         )
@@ -695,20 +726,36 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
+        chips_html = _static_chips_html(list(plt_lbls))
+        card_hdr = (
+            f'<div style="display:flex;align-items:center;justify-content:space-between;'
+            f'padding:14px 20px;border-bottom:1px solid #e8e8ed">'
+            f'<span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">'
+            f'{section_title}</span>{chips_html}</div>'
+        ) if section_title else ""
+        caption = (
+            f'<div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;'
+            f'color:#6e6e73;font-family:{_AP_FONT}">'
+            f'▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化</div>'
+        ) if change_map else ""
         return f"""
         <style>
           .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
           .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
         </style>
-        <div style="overflow:auto;max-height:620px;border:1px solid #e8e8ed;border-radius:18px;
-                    box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
-          <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;table-layout:fixed;
-                 font-family:{_AP_FONT}">
-            <thead style="position:sticky;top:0;background:#fff;z-index:1">
-              <tr>{header}</tr>
-            </thead>
-            <tbody>{rows_html}</tbody>
-          </table>
+        <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                    overflow:hidden;border:1px solid #e8e8ed;margin-bottom:8px">
+          {card_hdr}
+          <div style="overflow:auto;max-height:600px">
+            <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
+                   table-layout:fixed;font-family:{_AP_FONT};width:100%">
+              <thead style="position:sticky;top:0;background:#fff;z-index:1">
+                <tr>{header}</tr>
+              </thead>
+              <tbody>{rows_html}</tbody>
+            </table>
+          </div>
+          {caption}
         </div>
         """
 
@@ -757,13 +804,18 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     if present_plts:
         _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
         _mob_lbl_to_key = {PLATFORMS.get(k, k): k for k in present_plts}
-        _sel_mob_labels = st.multiselect(
-            "展示渠道",
-            options=_mob_labels_all,
-            default=_mob_labels_all,
-            key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
-            label_visibility="collapsed",
-        )
+        _mc1, _mc2 = st.columns([1, 10])
+        with _mc1:
+            st.markdown(f'<div style="font-size:12px;color:#6e6e73;padding-top:6px;'
+                        f'font-family:{_AP_FONT}">展示渠道</div>', unsafe_allow_html=True)
+        with _mc2:
+            _sel_mob_labels = st.multiselect(
+                "展示渠道",
+                options=_mob_labels_all,
+                default=_mob_labels_all,
+                key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
+                label_visibility="collapsed",
+            )
         present_plts = [_mob_lbl_to_key[l] for l in _sel_mob_labels if l in _mob_lbl_to_key]
         plt_labels = _sel_mob_labels
 
@@ -772,16 +824,11 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
         }
         max_rank = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
         _render_summary(set(present_plts), active_date)
-        st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank))
-        if change_map:
-            st.caption("▲▼ 数字表示与前一日相比的排名变化，NEW 表示新上榜，- 表示未变化")
+        st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank, section_title="移动平台排行榜"))
     else:
         st.info("移动平台暂无该榜单数据。")
 
     # ── PC 平台排行榜 ─────────────────────────────────────────────────────────
-    st.divider()
-    st.subheader("PC 平台排行榜")
-
     pc_plts = pc_plts_pre
     pc_data = pc_data_pre
 
@@ -791,13 +838,18 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     else:
         _pc_labels_all = [PLATFORMS.get(k, k) for k in pc_plts]
         _pc_lbl_to_key = {PLATFORMS.get(k, k): k for k in pc_plts}
-        _sel_pc_labels = st.multiselect(
-            "展示渠道",
-            options=_pc_labels_all,
-            default=_pc_labels_all,
-            key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
-            label_visibility="collapsed",
-        )
+        _pcc1, _pcc2 = st.columns([1, 10])
+        with _pcc1:
+            st.markdown(f'<div style="font-size:12px;color:#6e6e73;padding-top:6px;'
+                        f'font-family:{_AP_FONT}">展示渠道</div>', unsafe_allow_html=True)
+        with _pcc2:
+            _sel_pc_labels = st.multiselect(
+                "展示渠道",
+                options=_pc_labels_all,
+                default=_pc_labels_all,
+                key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
+                label_visibility="collapsed",
+            )
         pc_plts = [_pc_lbl_to_key[l] for l in _sel_pc_labels if l in _pc_lbl_to_key]
         pc_labels = _sel_pc_labels
 
@@ -806,7 +858,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
         }
         pc_max_rank = max((max(rm.keys()) for rm in pc_rank_maps.values() if rm), default=20)
         _render_summary(set(pc_plts), active_date)
-        st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank))
+        st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank, section_title="PC 平台排行榜"))
 
 
 _LAUNCH_TYPE_STYLE = {
