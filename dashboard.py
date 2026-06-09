@@ -44,7 +44,7 @@ body, .stApp, [data-testid="stAppViewContainer"],
   background: var(--ap-bg) !important;
 }
 [data-testid="stAppViewContainer"] > .main .block-container {
-  padding-left: 2rem !important;
+  padding-left: 1rem !important;
   padding-right: 2rem !important;
   max-width: 100% !important;
 }
