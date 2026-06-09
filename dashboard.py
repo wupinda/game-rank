@@ -23,6 +23,73 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown("""
+<style>
+:root {
+  --ap-bg:      #f5f5f7;
+  --ap-card:    #ffffff;
+  --ap-text:    #1d1d1f;
+  --ap-sub:     #6e6e73;
+  --ap-div:     #e8e8ed;
+  --ap-accent:  #0071e3;
+  --ap-green-bg:#e8f8ed;
+  --ap-red-bg:  #fff0ef;
+  --ap-blue-bg: #e8f0ff;
+  --ap-shadow:  0 2px 12px rgba(0,0,0,.08);
+  --ap-font:    -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+.stApp, [data-testid="stAppViewContainer"] > .main {
+  background: var(--ap-bg) !important;
+  font-family: var(--ap-font) !important;
+}
+[data-testid="stSidebar"] {
+  background: var(--ap-card) !important;
+  border-right: 1px solid var(--ap-div) !important;
+}
+[data-testid="stSidebar"] * { font-family: var(--ap-font) !important; }
+[data-testid="stSidebar"] h1 {
+  font-size: 17px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.3px !important;
+  color: var(--ap-text) !important;
+}
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
+  border: 1px solid #c7c7cc !important;
+  border-radius: 10px !important;
+  background: var(--ap-bg) !important;
+  font-size: 14px !important;
+}
+.stButton > button {
+  background: var(--ap-accent) !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 980px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  font-family: var(--ap-font) !important;
+  padding: 10px 20px !important;
+  transition: opacity .15s !important;
+}
+.stButton > button:hover { opacity: .85 !important; }
+hr { border-color: var(--ap-div) !important; }
+h1, h2, h3 {
+  font-family: var(--ap-font) !important;
+  color: var(--ap-text) !important;
+  letter-spacing: -0.5px !important;
+}
+h1 { font-size: 28px !important; font-weight: 700 !important; }
+h2 { font-size: 20px !important; font-weight: 600 !important; }
+[data-testid="stCaptionContainer"] p { color: var(--ap-sub) !important; font-size: 12px !important; }
+[data-testid="stMultiSelect"] [data-baseweb="tag"] {
+  background: var(--ap-bg) !important;
+  border: 1px solid #c7c7cc !important;
+  border-radius: 20px !important;
+  color: var(--ap-text) !important;
+  font-size: 12px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 OUTPUT_DIR = "./data"
 
 _OVERSEAS_PLATFORMS = {
@@ -58,6 +125,77 @@ def load_data(db: Database, platform=None, rank_type=None, fetch_date=None) -> p
     df["开发商"] = df["developer"]
     df["评分"]   = df["rating"].apply(lambda x: round(x, 1) if x else "")
     return df
+
+
+_AP_FONT = "-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif"
+
+def _dynamic_card_html(sections: list) -> str:
+    """
+    sections: list of dicts
+      type:  'green' | 'red' | 'blue'
+      icon:  emoji str
+      title: str
+      rows:  list of dicts  {platform, game, change, hint}
+    """
+    _icon_bg  = {"green": "#e8f8ed", "red": "#fff0ef", "blue": "#e8f0ff"}
+    _tag_style = {
+        "green": "background:#e8f8ed;color:#1a7a3a",
+        "red":   "background:#fff0ef;color:#cc2200",
+        "blue":  "background:#e8f0ff;color:#0055cc",
+    }
+    body = ""
+    for i, sec in enumerate(sections):
+        t   = sec["type"]
+        sep = "border-top:1px solid #e8e8ed;" if i > 0 else ""
+        rows_html = ""
+        for row in sec["rows"]:
+            chg   = row.get("change", "")
+            hint  = row.get("hint", "")
+            tag   = (f'<span style="display:inline-flex;align-items:center;padding:2px 8px;'
+                     f'border-radius:20px;font-size:12px;font-weight:600;flex-shrink:0;'
+                     f'{_tag_style[t]}">{chg}</span>') if chg else ""
+            hint_tag = (f'<span style="font-size:11px;color:#6e6e73;background:#f5f5f7;'
+                        f'padding:2px 7px;border-radius:20px;flex-shrink:0">{hint}</span>') if hint else ""
+            rows_html += (
+                f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;'
+                f'font-family:{_AP_FONT}">'
+                f'<span style="font-size:12px;color:#6e6e73;min-width:72px;flex-shrink:0">{row["platform"]}</span>'
+                f'<div style="display:flex;align-items:center;gap:8px">'
+                f'<span style="font-size:14px;font-weight:500;color:#1d1d1f">{row["game"]}</span>'
+                f'{tag}{hint_tag}</div></div>'
+            )
+        body += (
+            f'<div style="{sep}padding:14px 20px;display:flex;align-items:flex-start;gap:14px">'
+            f'<div style="width:32px;height:32px;border-radius:8px;background:{_icon_bg[t]};'
+            f'display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;margin-top:1px">'
+            f'{sec["icon"]}</div>'
+            f'<div style="flex:1">'
+            f'<div style="font-size:13px;font-weight:600;color:#1d1d1f;margin-bottom:8px;font-family:{_AP_FONT}">'
+            f'{sec["title"]}</div>{rows_html}</div></div>'
+        )
+    return (
+        f'<div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);'
+        f'overflow:hidden;margin-bottom:20px;border:1px solid #e8e8ed">'
+        f'<div style="padding:14px 20px;border-bottom:1px solid #e8e8ed;font-size:13px;'
+        f'font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">今日动态</div>'
+        f'{body}</div>'
+    )
+
+
+def _ap_badge(chg: str) -> str:
+    """返回 Apple 风格涨跌徽章 HTML。"""
+    base = ("display:inline-flex;align-items:center;justify-content:center;"
+            "min-width:42px;padding:2px 7px;border-radius:6px;"
+            "font-size:12px;font-weight:700;flex-shrink:0")
+    if chg is None:
+        return ""
+    if "↑" in chg:
+        return f'<span style="{base};background:#e8f8ed;color:#1a7a3a">▲{chg.replace("↑","")}</span>'
+    if "↓" in chg:
+        return f'<span style="{base};background:#fff0ef;color:#cc2200">▼{chg.replace("↓","")}</span>'
+    if chg == "NEW":
+        return f'<span style="{base};background:#e8f0ff;color:#0055cc">NEW</span>'
+    return '<span style="color:#d2d2d7;flex-shrink:0">—</span>'
 
 
 def build_rank_change_map(db: Database, sel_date: str, rank_type: str) -> dict:
@@ -138,7 +276,7 @@ def _analyze_movement(db, game: str, plt_key: str, rank_type: str,
 
 
 # ── 侧边栏 ─────────────────────────────────────────────────────────────────
-st.sidebar.title("🎮 游戏排行榜")
+st.sidebar.title("游戏排行榜")
 st.sidebar.divider()
 
 db = get_db()
@@ -151,10 +289,10 @@ if not dates:
 
 # 页签导航（放最前，后续选项依赖它）
 _PAGES = ["国内排行榜", "国内开测表", "海外排行榜"]
-sel_page = st.sidebar.radio("📑 页签", _PAGES, key="sel_page", label_visibility="collapsed")
+sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="collapsed")
 st.sidebar.divider()
 
-sel_date = st.sidebar.selectbox("📅 日期", dates, index=0)
+sel_date = st.sidebar.selectbox("日期", dates, index=0)
 
 sel_platform = None
 
@@ -163,14 +301,14 @@ if sel_page == "国内开测表":
     sel_rank_type = None
 elif sel_page == "海外排行榜":
     _overseas_rank_opts = {"下载榜": "download", "畅销榜": "revenue", "活跃榜": "active"}
-    sel_rank_label = st.sidebar.selectbox("📊 榜单类型", list(_overseas_rank_opts.keys()))
+    sel_rank_label = st.sidebar.selectbox("榜单类型", list(_overseas_rank_opts.keys()))
     sel_rank_type = _overseas_rank_opts[sel_rank_label]
 else:
     rank_type_labels = {"全部": None, **{v: k for k, v in RANK_TYPES.items()}}
     _rank_options = list(rank_type_labels.keys())
     _default_rank_idx = _rank_options.index("预约榜") if "预约榜" in _rank_options else 0
     sel_rank_label = st.sidebar.selectbox(
-        "📊 榜单类型",
+        "榜单类型",
         options=_rank_options,
         index=_default_rank_idx,
     )
@@ -179,7 +317,7 @@ else:
 st.sidebar.divider()
 
 # 自动刷新控制
-auto_refresh = st.sidebar.toggle("⏱ 自动刷新", value=False)
+auto_refresh = st.sidebar.toggle("自动刷新", value=False)
 if auto_refresh:
     refresh_mins = st.sidebar.selectbox(
         "刷新间隔",
@@ -191,7 +329,7 @@ else:
     refresh_mins = 5
 
 st.sidebar.divider()
-if st.sidebar.button("🔄 立即抓取数据"):
+if st.sidebar.button("立即抓取数据"):
     with st.spinner("正在抓取，请稍候…"):
         import subprocess
         result = subprocess.run(
@@ -212,7 +350,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
     if not df.empty:
         df = df[~df["platform"].isin(_OVERSEAS_PLATFORMS)]
 
-    st.title(f"游戏渠道排行榜 — {sel_date}")
+    st.title("国内排行榜")
 
     # 平台显示名 -> platform key 的映射（全量，供表格与趋势图共用）
     plt_label_to_key = {}
@@ -224,7 +362,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
     # 多平台对比视图
     if not df.empty and sel_rank_type:
-        st.subheader(f"📋 {RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比")
+        st.subheader(f"{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比")
 
         change_map = build_rank_change_map(db, sel_date, sel_rank_type)
 
@@ -271,47 +409,45 @@ def render_data(sel_date, sel_platform, sel_rank_type):
             cross_plts.sort(reverse=True)
 
             # 3. 渲染概述卡片
-            lines = []
+            sections = []
             if risers:
-                parts = []
+                rows = []
                 for n, g, pk in risers[:3]:
                     a = _analyze_movement(db, g, pk, sel_rank_type, sel_date, change_map)
-                    suffix = f" *({a})*" if a else ""
-                    parts.append(f"{PLATFORMS.get(pk, pk)}·**{g}** ↑{n}{suffix}")
-                lines.append(("📈 最大涨幅", "  |  ".join(parts)))
+                    rows.append({"platform": PLATFORMS.get(pk, pk), "game": g, "change": f"▲ {n}", "hint": a})
+                sections.append({"type": "green", "icon": "📈", "title": "最大涨幅", "rows": rows})
             if fallers:
-                parts = []
+                rows = []
                 for n, g, pk in fallers[:3]:
                     a = _analyze_movement(db, g, pk, sel_rank_type, sel_date, change_map)
-                    suffix = f" *({a})*" if a else ""
-                    parts.append(f"{PLATFORMS.get(pk, pk)}·**{g}** ↓{n}{suffix}")
-                lines.append(("📉 最大跌幅", "  |  ".join(parts)))
+                    rows.append({"platform": PLATFORMS.get(pk, pk), "game": g, "change": f"▼ {n}", "hint": a})
+                sections.append({"type": "red", "icon": "📉", "title": "最大跌幅", "rows": rows})
             if cross_plts:
-                parts = [f"**{g}**（{cnt}个平台）" for cnt, g in cross_plts[:4]]
-                lines.append(("🔥 多平台上榜", "  |  ".join(parts)))
+                rows = [{"platform": "", "game": g, "change": f"{cnt} 个平台", "hint": ""} for cnt, g in cross_plts[:4]]
+                sections.append({"type": "blue", "icon": "🔥", "title": "多平台上榜", "rows": rows})
 
-            if lines:
-                with st.container(border=True):
-                    st.caption(f"📊 今日动态 — {sel_date}")
-                    for icon_label, content in lines:
-                        st.markdown(f"**{icon_label}**：{content}")
+            if sections:
+                st.html(_dynamic_card_html(sections))
 
-        # 构建 HTML 表格（斑马纹）
-        DIVIDER  = "border-right:2px solid #d1d5db"
-        COL_W    = "width:220px;min-width:220px;max-width:220px"
-        th_rank  = f"padding:8px 10px;border-bottom:2px solid #d1d5db;text-align:center;font-weight:600;width:52px;min-width:52px;{DIVIDER}"
-        th_game  = f"padding:8px 14px;border-bottom:2px solid #d1d5db;font-weight:600;{COL_W};{DIVIDER}"
+        # 构建 HTML 表格（Apple 风格）
+        DIVIDER = "border-right:1px solid #e8e8ed"
+        COL_W   = "width:220px;min-width:220px;max-width:220px"
+        th_base = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;"
+                   f"font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{COL_W};{DIVIDER}")
+        th_rank = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;text-align:center;"
+                   f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;"
+                   f"color:#6e6e73;width:52px;min-width:52px;{DIVIDER}")
 
         header = f'<th style="{th_rank}">排名</th>' + "".join(
-            f'<th style="{th_game}">{col}</th>' for col in game_cols
+            f'<th style="{th_base}">{col}</th>' for col in game_cols
         )
 
         rows_html = ""
-        for idx, (_, row) in enumerate(pivot.iterrows()):
+        for _, row in pivot.iterrows():
             rank_val = int(row["排名"])
-            row_bg   = "background:#f8fafc" if idx % 2 == 1 else "background:#ffffff"
-            td_rank  = f"padding:6px 10px;text-align:center;color:#6b7280;width:52px;{DIVIDER};{row_bg}"
-            td_game  = f"padding:6px 12px;{COL_W};{DIVIDER};{row_bg}"
+            td_rank = (f"padding:10px 10px;text-align:center;color:#6e6e73;font-size:13px;"
+                       f"width:52px;{DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff")
+            td_game = f"padding:10px 12px;{COL_W};{DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff"
             cells = f'<td style="{td_rank}">{rank_val}</td>'
             for col in game_cols:
                 game = row.get(col)
@@ -319,32 +455,26 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                     cells += f'<td style="{td_game}"></td>'
                     continue
                 plt_key = plt_label_to_key.get(col, "")
-                chg = change_map.get((plt_key, game), None) if change_map else None
-                if chg is None:
-                    badge = ""
-                elif "↑" in chg:
-                    num = chg.replace("↑", "")
-                    badge = f'<span style="color:#16a34a;font-weight:700;flex-shrink:0">▲{num}</span>'
-                elif "↓" in chg:
-                    num = chg.replace("↓", "")
-                    badge = f'<span style="color:#dc2626;font-weight:700;flex-shrink:0">▼{num}</span>'
-                elif chg == "NEW":
-                    badge = '<span style="color:#2563eb;font-weight:700;flex-shrink:0">NEW</span>'
-                else:
-                    badge = '<span style="color:#9ca3af;flex-shrink:0">-</span>'
+                chg   = change_map.get((plt_key, game), None) if change_map else None
+                badge = _ap_badge(chg)
                 cell_inner = (
                     f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="overflow:hidden;text-overflow:ellipsis">{game}</span>'
-                    f'{badge}'
-                    f'</div>'
+                    f'{badge}</div>'
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
-            rows_html += f"<tr>{cells}</tr>"
+            rows_html += f'<tr class="ap-tr">{cells}</tr>'
 
         table_html = f"""
-        <div style="overflow:auto;max-height:620px;border:1px solid #d1d5db;border-radius:8px">
-          <table style="border-collapse:collapse;font-size:14px;table-layout:fixed">
-            <thead style="position:sticky;top:0;background:#f1f5f9;z-index:1">
+        <style>
+          .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
+          .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
+        </style>
+        <div style="overflow:auto;max-height:620px;border:1px solid #e8e8ed;border-radius:18px;
+                    box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
+          <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;table-layout:fixed;
+                 font-family:{_AP_FONT}">
+            <thead style="position:sticky;top:0;background:#fff;z-index:1">
               <tr>{header}</tr>
             </thead>
             <tbody>{rows_html}</tbody>
@@ -353,7 +483,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         """
         st.html(table_html)
         if change_map:
-            st.caption("▲▼ 数字表示与前一日相比的排名变化，NEW 表示新上榜，- 表示未变化")
+            st.caption("▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化")
 
     # 导出
     if not df.empty:
@@ -392,7 +522,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
     # 趋势图
     st.divider()
-    st.subheader("📈 排名趋势（选择游戏查看历史变化）")
+    st.subheader("排名趋势")
     game_options = sorted(df["游戏名"].unique().tolist()) if not df.empty else []
     if game_options:
         tr_col1, tr_col2 = st.columns([3, 1])
@@ -438,7 +568,7 @@ _PC_PLT_ORDER = [
 _OVERSEAS_RANK_TYPES = {"download", "revenue", "active"}
 
 def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
-    st.title(f"海外排行榜 — {sel_date}")
+    st.title("海外排行榜")
 
     overseas_dates = db.available_dates()
     if not overseas_dates:
@@ -476,53 +606,51 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     # Build change map (compared to previous day) — reuse existing util
     change_map = build_rank_change_map(db, active_date, rank_type_ov)
 
-    st.subheader("📱 移动平台排行榜")
+    st.subheader("移动平台排行榜")
 
-    # HTML table（斑马纹，与国内榜一致）
-    DIVIDER = "border-right:2px solid #d1d5db"
-    COL_W   = "width:220px;min-width:220px;max-width:220px"
-    th_rank = f"padding:8px 10px;border-bottom:2px solid #d1d5db;text-align:center;font-weight:600;width:52px;min-width:52px;{DIVIDER}"
-    th_game = f"padding:8px 14px;border-bottom:2px solid #d1d5db;font-weight:600;{COL_W};{DIVIDER}"
-
-    def _make_badge(chg):
-        if chg is None:
-            return ""
-        if "↑" in chg:
-            return f'<span style="color:#16a34a;font-weight:700;flex-shrink:0">▲{chg.replace("↑","")}</span>'
-        if "↓" in chg:
-            return f'<span style="color:#dc2626;font-weight:700;flex-shrink:0">▼{chg.replace("↓","")}</span>'
-        if chg == "NEW":
-            return '<span style="color:#2563eb;font-weight:700;flex-shrink:0">NEW</span>'
-        return '<span style="color:#9ca3af;flex-shrink:0">-</span>'
+    # HTML table（Apple 风格）
+    _DIVIDER = "border-right:1px solid #e8e8ed"
+    _COL_W   = "width:220px;min-width:220px;max-width:220px"
+    _th_rank = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;text-align:center;"
+                f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;"
+                f"color:#6e6e73;width:52px;min-width:52px;{_DIVIDER}")
+    _th_game = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;"
+                f"font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{_COL_W};{_DIVIDER}")
 
     def _render_table(rank_maps, plt_keys, plt_lbls, max_rank):
-        header = f'<th style="{th_rank}">排名</th>' + "".join(
-            f'<th style="{th_game}">{lbl}</th>' for lbl in plt_lbls
+        header = f'<th style="{_th_rank}">排名</th>' + "".join(
+            f'<th style="{_th_game}">{lbl}</th>' for lbl in plt_lbls
         )
         rows_html = ""
-        for idx, rank_val in enumerate(range(1, min(max_rank, 30) + 1)):
-            row_bg  = "background:#f8fafc" if idx % 2 == 1 else "background:#ffffff"
-            td_rank = f"padding:6px 10px;text-align:center;color:#6b7280;width:52px;{DIVIDER};{row_bg}"
-            td_game = f"padding:6px 12px;{COL_W};{DIVIDER};{row_bg}"
+        for rank_val in range(1, min(max_rank, 30) + 1):
+            td_rank = (f"padding:10px 10px;text-align:center;color:#6e6e73;font-size:13px;"
+                       f"width:52px;{_DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff")
+            td_game = f"padding:10px 12px;{_COL_W};{_DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff"
             cells   = f'<td style="{td_rank}">{rank_val}</td>'
             for plt_key in plt_keys:
                 game = rank_maps[plt_key].get(rank_val)
                 if not game:
                     cells += f'<td style="{td_game}"></td>'
                     continue
-                chg = change_map.get((plt_key, game), None) if change_map else None
-                badge = _make_badge(chg)
+                chg   = change_map.get((plt_key, game), None) if change_map else None
+                badge = _ap_badge(chg)
                 cell_inner = (
                     f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="overflow:hidden;text-overflow:ellipsis">{game}</span>'
                     f'{badge}</div>'
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
-            rows_html += f"<tr>{cells}</tr>"
+            rows_html += f'<tr class="ap-tr">{cells}</tr>'
         return f"""
-        <div style="overflow:auto;max-height:620px;border:1px solid #d1d5db;border-radius:8px">
-          <table style="border-collapse:collapse;font-size:14px;table-layout:fixed">
-            <thead style="position:sticky;top:0;background:#f1f5f9;z-index:1">
+        <style>
+          .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
+          .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
+        </style>
+        <div style="overflow:auto;max-height:620px;border:1px solid #e8e8ed;border-radius:18px;
+                    box-shadow:0 2px 12px rgba(0,0,0,.08);background:#fff">
+          <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;table-layout:fixed;
+                 font-family:{_AP_FONT}">
+            <thead style="position:sticky;top:0;background:#fff;z-index:1">
               <tr>{header}</tr>
             </thead>
             <tbody>{rows_html}</tbody>
@@ -531,7 +659,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
         """
 
     def _render_summary(plt_keys, section_date):
-        """在表格上方渲染今日动态概述（涨跌幅 / 新上榜 / 多平台）"""
+        """在表格上方渲染今日动态概述（Apple 风格 HTML 卡片）"""
         if not change_map:
             return
         from collections import Counter
@@ -552,30 +680,25 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
             [(cnt, g) for g, cnt in game_plt_count.items() if cnt >= 3],
             reverse=True,
         )
-        lines = []
+        sections = []
         if risers:
-            parts = []
+            rows = []
             for n, g, pk in risers[:3]:
                 a = _analyze_movement(db, g, pk, rank_type_ov, active_date, change_map)
-                suffix = f" *({a})*" if a else ""
-                parts.append(f"{PLATFORMS.get(pk, pk)}·**{g}** ↑{n}{suffix}")
-            lines.append(("📈 最大涨幅", "  |  ".join(parts)))
+                rows.append({"platform": PLATFORMS.get(pk, pk), "game": g, "change": f"▲ {n}", "hint": a})
+            sections.append({"type": "green", "icon": "📈", "title": "最大涨幅", "rows": rows})
         if fallers:
-            parts = []
+            rows = []
             for n, g, pk in fallers[:3]:
                 a = _analyze_movement(db, g, pk, rank_type_ov, active_date, change_map)
-                suffix = f" *({a})*" if a else ""
-                parts.append(f"{PLATFORMS.get(pk, pk)}·**{g}** ↓{n}{suffix}")
-            lines.append(("📉 最大跌幅", "  |  ".join(parts)))
+                rows.append({"platform": PLATFORMS.get(pk, pk), "game": g, "change": f"▼ {n}", "hint": a})
+            sections.append({"type": "red", "icon": "📉", "title": "最大跌幅", "rows": rows})
         if cross_plts:
-            parts = [f"**{g}**（{cnt}个平台）" for cnt, g in cross_plts[:4]]
-            lines.append(("🔥 多平台上榜", "  |  ".join(parts)))
+            rows = [{"platform": "", "game": g, "change": f"{cnt} 个平台", "hint": ""} for cnt, g in cross_plts[:4]]
+            sections.append({"type": "blue", "icon": "🔥", "title": "多平台上榜", "rows": rows})
 
-        if lines:
-            with st.container(border=True):
-                st.caption(f"📊 今日动态 — {section_date}")
-                for label, content in lines:
-                    st.markdown(f"**{label}**：{content}")
+        if sections:
+            st.html(_dynamic_card_html(sections))
 
     if present_plts:
         _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
@@ -603,7 +726,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
 
     # ── PC 平台排行榜 ─────────────────────────────────────────────────────────
     st.divider()
-    st.subheader("💻 PC 平台排行榜")
+    st.subheader("PC 平台排行榜")
 
     pc_plts = pc_plts_pre
     pc_data = pc_data_pre
