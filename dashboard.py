@@ -60,16 +60,13 @@ st.markdown("""
   letter-spacing: -0.3px !important;
   color: var(--ap-text) !important;
 }
-/* 侧边栏元素间距收紧 */
-[data-testid="stSidebarContent"] [data-testid="stVerticalBlock"] {
-  gap: 0 !important;
-}
+/* 侧边栏间距：divider 收紧，只缩减 radio nav 区域上下边距 */
 [data-testid="stSidebar"] hr {
-  margin: 6px 0 !important;
+  margin: 10px 0 !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] {
-  padding-top: 4px !important;
-  padding-bottom: 4px !important;
+  margin-top: -4px !important;
+  margin-bottom: -4px !important;
 }
 /* 立即抓取数据按钮全宽 */
 [data-testid="stSidebar"] .stButton,
