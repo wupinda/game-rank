@@ -1,0 +1,30 @@
+general:
+  top_n: 20
+  output_dir: ./data
+
+supabase:
+  url: "https://your-project-ref.supabase.co"   # 替换为 Supabase Project URL
+  key: "your-anon-key"                           # 替换为 Supabase anon key
+
+schedule:
+  enabled: true
+  time: "10:00"
+  export_excel: true
+
+proxy:
+  enabled: false
+  http: ""
+  https: ""
+
+platforms:
+  appstore: true
+  taptap: true
+  bilibili: true
+  xiaomi: true
+  kuaibao: true
+  wegame: true
+  myapp: true
+
+logging:
+  level: INFO
+  file: ./data/game_rank.log

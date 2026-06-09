@@ -1,0 +1,21 @@
+# 凭据（不能上传）
+config.yaml
+.streamlit/secrets.toml
+
+# 数据文件
+data/
+*.db
+*.xlsx
+*.log
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Claude 内部文件
+.claude/
