@@ -574,10 +574,10 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         COL_W   = "width:220px;min-width:220px;max-width:220px"
         th_base = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;font-size:11px;"
                    f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                   f"color:#6e6e73;{COL_W};background:#fafafa")
+                   f"color:#6e6e73;{COL_W};background:#fff")
         th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
                    f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                   f"color:#6e6e73;width:56px;min-width:56px;background:#fafafa")
+                   f"color:#6e6e73;width:56px;min-width:56px;background:#fff")
 
         header = f'<th style="{th_rank}">排名</th>' + "".join(
             f'<th style="{th_base}">{col}</th>' for col in game_cols
@@ -761,10 +761,10 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     _COL_W   = "width:220px;min-width:220px;max-width:220px"
     _th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
                 f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                f"color:#6e6e73;width:56px;min-width:56px;background:#fafafa")
+                f"color:#6e6e73;width:56px;min-width:56px;background:#fff")
     _th_game = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;font-size:11px;"
                 f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                f"color:#6e6e73;{_COL_W};background:#fafafa")
+                f"color:#6e6e73;{_COL_W};background:#fff")
 
     def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title=""):
         header = f'<th style="{_th_rank}">排名</th>' + "".join(
