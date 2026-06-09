@@ -80,24 +80,13 @@ h1, h2, h3 {
 h1 { font-size: 28px !important; font-weight: 700 !important; }
 h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-testid="stCaptionContainer"] p { color: var(--ap-sub) !important; font-size: 12px !important; }
-/* Multiselect — 去掉外框，只保留 chip 标签 */
+/* Multiselect — 去掉外框 */
 [data-testid="stMultiSelect"] > div,
 [data-testid="stMultiSelect"] > div > div,
-[data-testid="stMultiSelect"] [data-baseweb="select"],
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child {
+[data-testid="stMultiSelect"] [data-baseweb="select"] {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  padding: 0 !important;
-  min-height: 0 !important;
-}
-/* 隐藏下拉箭头 SVG，但保留容器可交互 */
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div:last-child {
-  opacity: 0 !important;
-  width: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
 }
 /* Chip 标签 */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
@@ -465,57 +454,27 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
         _all_plt_labels = sorted(plt_label_to_key.keys())
 
-        # 渠道选择：label + chips，无外框
-        _c1, _c2 = st.columns([1, 10])
-        with _c1:
-            st.markdown(
-                f'<div style="font-size:12px;color:#6e6e73;font-family:{_AP_FONT};'
-                f'padding:8px 0;white-space:nowrap">展示渠道</div>',
-                unsafe_allow_html=True,
-            )
-        with _c2:
-            _sel_plt_labels = st.multiselect(
-                "展示渠道",
-                options=_all_plt_labels,
-                default=_all_plt_labels,
-                key=f"plt_sort_{sel_date}_{sel_rank_type}",
-                label_visibility="collapsed",
-            )
-        df_view = df[df["平台"].isin(_sel_plt_labels)] if _sel_plt_labels else df
-
-        # pivot 使用原始游戏名（不混入变化标记）
-        pivot = df_view.pivot_table(
-            index="排名", columns="平台", values="游戏名", aggfunc="first"
-        ).reset_index()
-
-        # 按拖拽顺序排列列（而非 pandas 默认的字母序）
-        game_cols = [c for c in _sel_plt_labels if c in pivot.columns]
-
-        # ── 今日动态概述 ──────────────────────────────────────────────────────
+        # ── 今日动态概述（用全量平台数据）────────────────────────────────────
         if change_map:
-            # 1. 各平台涨幅最大 / 跌幅最大
+            from collections import Counter
+            all_plt_keys = {plt_label_to_key.get(c) for c in _all_plt_labels}
             risers, fallers = [], []
             for (plt_key, game), chg in change_map.items():
-                if plt_key not in {plt_label_to_key.get(c) for c in game_cols}:
+                if plt_key not in all_plt_keys:
                     continue
                 if "↑" in chg:
                     risers.append((int(chg.replace("↑", "")), game, plt_key))
                 elif "↓" in chg:
                     fallers.append((int(chg.replace("↓", "")), game, plt_key))
-
             risers.sort(reverse=True)
             fallers.sort(reverse=True)
-
-            # 2. 多平台同时上榜（≥3个平台）
-            from collections import Counter
             game_plt_count = Counter()
             for (plt_key, game) in change_map.keys():
-                if plt_key in {plt_label_to_key.get(c) for c in game_cols}:
+                if plt_key in all_plt_keys:
                     game_plt_count[game] += 1
-            cross_plts = [(cnt, g) for g, cnt in game_plt_count.items() if cnt >= 3]
-            cross_plts.sort(reverse=True)
-
-            # 3. 渲染概述卡片
+            cross_plts = sorted(
+                [(cnt, g) for g, cnt in game_plt_count.items() if cnt >= 3], reverse=True
+            )
             sections = []
             if risers:
                 rows = []
@@ -532,9 +491,23 @@ def render_data(sel_date, sel_platform, sel_rank_type):
             if cross_plts:
                 rows = [{"platform": "", "game": g, "change": f"{cnt} 个平台", "hint": ""} for cnt, g in cross_plts[:4]]
                 sections.append({"type": "blue", "icon": "🔥", "title": "多平台上榜", "rows": rows})
-
             if sections:
                 st.html(_dynamic_card_html(sections))
+
+        # ── 渠道选择（紧贴表格上方）──────────────────────────────────────────
+        _sel_plt_labels = st.multiselect(
+            "展示渠道",
+            options=_all_plt_labels,
+            default=_all_plt_labels,
+            key=f"plt_sort_{sel_date}_{sel_rank_type}",
+        )
+
+        # 根据选择过滤数据并构建 pivot
+        df_view = df[df["平台"].isin(_sel_plt_labels)] if _sel_plt_labels else df
+        pivot = df_view.pivot_table(
+            index="排名", columns="平台", values="游戏名", aggfunc="first"
+        ).reset_index()
+        game_cols = [c for c in _sel_plt_labels if c in pivot.columns]
 
         # 构建 HTML 表格（Apple 风格）
         DIVIDER = "border-right:1px solid #e8e8ed"
@@ -572,8 +545,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
 
-        title_str   = f'{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比'
-        chips_html  = _static_chips_html(game_cols)
+        title_str = f'{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比'
         table_html = f"""
         <style>
           .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
@@ -581,12 +553,10 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         </style>
         <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
                     overflow:hidden;border:1px solid #e8e8ed;margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;
-                      padding:14px 20px;border-bottom:1px solid #e8e8ed">
+          <div style="padding:14px 20px;border-bottom:1px solid #e8e8ed">
             <span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">
               {title_str}
             </span>
-            {chips_html}
           </div>
           <div style="overflow:auto;max-height:600px">
             <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
@@ -759,12 +729,10 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
-        chips_html = _static_chips_html(list(plt_lbls))
         card_hdr = (
-            f'<div style="display:flex;align-items:center;justify-content:space-between;'
-            f'padding:14px 20px;border-bottom:1px solid #e8e8ed">'
+            f'<div style="padding:14px 20px;border-bottom:1px solid #e8e8ed">'
             f'<span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">'
-            f'{section_title}</span>{chips_html}</div>'
+            f'{section_title}</span></div>'
         ) if section_title else ""
         caption = (
             f'<div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;'
@@ -837,18 +805,15 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     if present_plts:
         _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
         _mob_lbl_to_key = {PLATFORMS.get(k, k): k for k in present_plts}
-        _mc1, _mc2 = st.columns([1, 10])
-        with _mc1:
-            st.markdown(f'<div style="font-size:12px;color:#6e6e73;padding-top:6px;'
-                        f'font-family:{_AP_FONT}">展示渠道</div>', unsafe_allow_html=True)
-        with _mc2:
-            _sel_mob_labels = st.multiselect(
-                "展示渠道",
-                options=_mob_labels_all,
-                default=_mob_labels_all,
-                key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
-                label_visibility="collapsed",
-            )
+
+        _render_summary(set(present_plts), active_date)
+
+        _sel_mob_labels = st.multiselect(
+            "展示渠道",
+            options=_mob_labels_all,
+            default=_mob_labels_all,
+            key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
+        )
         present_plts = [_mob_lbl_to_key[l] for l in _sel_mob_labels if l in _mob_lbl_to_key]
         plt_labels = _sel_mob_labels
 
@@ -856,7 +821,6 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
             k: {r["rank_pos"]: r["game_name"] for r in plt_data[k]} for k in present_plts
         }
         max_rank = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
-        _render_summary(set(present_plts), active_date)
         st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank, section_title="移动平台排行榜"))
     else:
         st.info("移动平台暂无该榜单数据。")
@@ -871,18 +835,15 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     else:
         _pc_labels_all = [PLATFORMS.get(k, k) for k in pc_plts]
         _pc_lbl_to_key = {PLATFORMS.get(k, k): k for k in pc_plts}
-        _pcc1, _pcc2 = st.columns([1, 10])
-        with _pcc1:
-            st.markdown(f'<div style="font-size:12px;color:#6e6e73;padding-top:6px;'
-                        f'font-family:{_AP_FONT}">展示渠道</div>', unsafe_allow_html=True)
-        with _pcc2:
-            _sel_pc_labels = st.multiselect(
-                "展示渠道",
-                options=_pc_labels_all,
-                default=_pc_labels_all,
-                key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
-                label_visibility="collapsed",
-            )
+
+        _render_summary(set(pc_plts), active_date)
+
+        _sel_pc_labels = st.multiselect(
+            "展示渠道",
+            options=_pc_labels_all,
+            default=_pc_labels_all,
+            key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
+        )
         pc_plts = [_pc_lbl_to_key[l] for l in _sel_pc_labels if l in _pc_lbl_to_key]
         pc_labels = _sel_pc_labels
 
@@ -890,7 +851,6 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
             k: {r["rank_pos"]: r["game_name"] for r in pc_data[k]} for k in pc_plts
         }
         pc_max_rank = max((max(rm.keys()) for rm in pc_rank_maps.values() if rm), default=20)
-        _render_summary(set(pc_plts), active_date)
         st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank, section_title="PC 平台排行榜"))
 
 
