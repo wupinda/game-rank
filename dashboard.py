@@ -1021,7 +1021,7 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
                 t_style  = _launch_type_style(g["type"])
                 badge    = (
                     f'<span style="display:inline-block;padding:1px 7px;border-radius:100px;'
-                    f'font-size:11px;font-weight:500;margin-right:5px;{t_style}">{g["type"]}</span>'
+                    f'font-size:11px;font-weight:500;margin-right:5px;white-space:nowrap;flex-shrink:0;{t_style}">{g["type"]}</span>'
                     if g["type"] else ""
                 )
                 time_pfx = (
