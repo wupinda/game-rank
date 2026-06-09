@@ -618,7 +618,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
           </div>
           <div style="overflow:auto;max-height:600px">
             <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
-                   table-layout:fixed;font-family:{_AP_FONT};width:100%">
+                   table-layout:fixed;font-family:{_AP_FONT};width:auto">
               <thead style="position:sticky;top:0;z-index:1">
                 <tr>{header}</tr>
               </thead>
@@ -814,7 +814,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
           {card_hdr}
           <div style="overflow:auto;max-height:600px">
             <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
-                   table-layout:fixed;font-family:{_AP_FONT};width:100%">
+                   table-layout:fixed;font-family:{_AP_FONT};width:auto">
               <thead style="position:sticky;top:0;z-index:1">
                 <tr>{header}</tr>
               </thead>
@@ -1056,7 +1056,7 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
       </div>
       <div style="overflow:auto;max-height:700px">
         <table class="lch-tbl" style="border-collapse:collapse;font-size:14px;
-               table-layout:fixed;font-family:{_AP_FONT};width:100%">
+               table-layout:fixed;font-family:{_AP_FONT};width:auto">
           <thead style="position:sticky;top:0;z-index:1">
             <tr>{header}</tr>
           </thead>
