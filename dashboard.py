@@ -64,6 +64,9 @@ body, .stApp, [data-testid="stAppViewContainer"],
   max-width: 240px !important;
   width: 240px !important;
 }
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+  padding-top: 20px !important;
+}
 /* 针对性设置侧边栏字体，不触碰 button/span（Material Symbols 图标） */
 [data-testid="stSidebar"] p,
 [data-testid="stSidebar"] label,
