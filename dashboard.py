@@ -138,38 +138,36 @@ h2 { font-size: 20px !important; font-weight: 600 !important; }
   box-shadow: none !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="select"] {
-  border: 1px solid #d2d2d7 !important;
-  border-radius: 12px !important;
   background: var(--ap-card) !important;
-  box-shadow: none !important;
-  padding: 4px 6px !important;
-  transition: border-color .15s !important;
+  border: 1px solid #e8e8ed !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06) !important;
+  padding: 5px 8px !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="select"]:focus-within {
-  border-color: var(--ap-accent) !important;
-  box-shadow: 0 0 0 3px rgba(0,113,227,.12) !important;
+  border-color: #a0a0a5 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08) !important;
 }
-/* Chip 标签 — accent tint */
+/* Chip — Apple 系统灰 */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
-  background: rgba(0,113,227,.08) !important;
+  background: #ebebf0 !important;
   border: none !important;
   border-radius: 100px !important;
-  color: var(--ap-accent) !important;
+  color: #1d1d1f !important;
   font-size: 12px !important;
-  font-weight: 500 !important;
+  font-weight: 400 !important;
   font-family: var(--ap-font) !important;
-  padding: 3px 6px 3px 10px !important;
+  padding: 2px 6px 2px 10px !important;
   margin: 2px 3px !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="tag"] span {
-  color: var(--ap-accent) !important;
+  color: #1d1d1f !important;
   font-size: 12px !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="tag"] svg {
-  color: var(--ap-accent) !important;
-  opacity: 0.6 !important;
-  width: 13px !important;
-  height: 13px !important;
+  color: #6e6e73 !important;
+  width: 12px !important;
+  height: 12px !important;
 }
 /* 输入框 */
 [data-testid="stMultiSelect"] input {
