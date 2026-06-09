@@ -130,10 +130,16 @@ h1, h2, h3 {
 h1 { font-size: 28px !important; font-weight: 700 !important; }
 h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-testid="stCaptionContainer"] p { color: var(--ap-sub) !important; font-size: 12px !important; }
-/* Multiselect — 去掉外框 */
-[data-testid="stMultiSelect"] > div,
-[data-testid="stMultiSelect"] > div > div,
+/* Multiselect 外框 */
 [data-testid="stMultiSelect"] [data-baseweb="select"] {
+  border: 1px solid #c7c7cc !important;
+  border-radius: 10px !important;
+  background: var(--ap-card) !important;
+  box-shadow: none !important;
+  min-height: 38px !important;
+}
+[data-testid="stMultiSelect"] > div,
+[data-testid="stMultiSelect"] > div > div {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
