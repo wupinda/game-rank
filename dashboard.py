@@ -91,9 +91,13 @@ h2 { font-size: 20px !important; font-weight: 600 !important; }
   padding: 0 !important;
   min-height: 0 !important;
 }
-/* 隐藏右侧下拉箭头和清空按钮区域 */
+/* 隐藏下拉箭头 SVG，但保留容器可交互 */
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div:last-child {
-  display: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
 }
 /* Chip 标签 */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
