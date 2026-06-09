@@ -100,6 +100,8 @@ body, .stApp, [data-testid="stAppViewContainer"],
 [data-testid="stSidebar"] .stButton {
   width: 100% !important;
   display: block !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 [data-testid="stSidebar"] [data-testid="stButton"] > button,
 [data-testid="stSidebar"] .stButton > button {
