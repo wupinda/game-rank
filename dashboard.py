@@ -43,8 +43,11 @@ body, .stApp, [data-testid="stAppViewContainer"],
   font-family: var(--ap-font) !important;
   background: var(--ap-bg) !important;
 }
+[data-testid="stAppViewContainer"] > .main {
+  padding-left: 0 !important;
+}
 [data-testid="stAppViewContainer"] > .main .block-container {
-  padding-left: 0.25rem !important;
+  padding-left: 1.5rem !important;
   padding-right: 2rem !important;
   max-width: 100% !important;
 }
