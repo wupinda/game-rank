@@ -352,7 +352,7 @@ def _ap_badge(chg: str) -> str:
         return f'<span style="{base};background:#fff0ef;color:#cc2200">▼{chg.replace("↓","")}</span>'
     if chg == "NEW":
         return f'<span style="{base};background:#e8f0ff;color:#0055cc">NEW</span>'
-    return f'<span style="{base};background:transparent;color:#b0b0b5;font-size:16px;font-weight:900;line-height:1">—</span>'
+    return f'<span style="{base};background:transparent;color:#b0b0b5;font-size:14px;font-weight:700;line-height:1">—</span>'
 
 
 def build_rank_change_map(db: Database, sel_date: str, rank_type: str) -> dict:
@@ -572,12 +572,11 @@ def render_data(sel_date, sel_platform, sel_rank_type):
 
         # 构建 HTML 表格（Apple 风格，无竖线）
         COL_W   = "width:220px;min-width:220px;max-width:220px"
-        th_base = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:13px;"
-                   f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                   f"color:#6e6e73;{COL_W};background:#fff")
-        th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
-                   f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                   f"color:#6e6e73;width:56px;min-width:56px;background:#fff")
+        th_style = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
+                    f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                    f"color:#6e6e73;background:#fff")
+        th_base = f"{th_style};{COL_W}"
+        th_rank = f"{th_style};width:56px;min-width:56px"
 
         header = f'<th style="{th_rank}">排名</th>' + "".join(
             f'<th style="{th_base}">{col}</th>' for col in game_cols
@@ -759,12 +758,11 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
 
     # HTML table（Apple 风格，无竖线）
     _COL_W   = "width:220px;min-width:220px;max-width:220px"
-    _th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
-                f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                f"color:#6e6e73;width:56px;min-width:56px;background:#fff")
-    _th_game = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;font-size:13px;"
-                f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
-                f"color:#6e6e73;{_COL_W};background:#fff")
+    _th_style = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
+                 f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                 f"color:#6e6e73;background:#fff")
+    _th_rank = f"{_th_style};width:56px;min-width:56px"
+    _th_game = f"{_th_style};{_COL_W}"
 
     def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title=""):
         header = f'<th style="{_th_rank}">排名</th>' + "".join(
