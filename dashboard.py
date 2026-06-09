@@ -555,13 +555,11 @@ def render_data(sel_date, sel_platform, sel_rank_type):
             if sections:
                 st.html(_dynamic_card_html(sections))
 
-        # ── 渠道选择（紧贴表格上方）──────────────────────────────────────────
-        _sel_plt_labels = st.multiselect(
-            "展示渠道",
-            options=_all_plt_labels,
-            default=_all_plt_labels,
-            key=f"plt_sort_{sel_date}_{sel_rank_type}",
-        )
+        # ── 渠道选择：先从 session_state 读取，multiselect 放在表格下方 ──────
+        _plt_key = f"plt_sort_{sel_date}_{sel_rank_type}"
+        _sel_plt_labels = st.session_state.get(_plt_key, _all_plt_labels)
+        if not _sel_plt_labels:
+            _sel_plt_labels = _all_plt_labels
 
         # 根据选择过滤数据并构建 pivot
         df_view = df[df["平台"].isin(_sel_plt_labels)] if _sel_plt_labels else df
@@ -634,6 +632,14 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         </div>
         """
         st.html(table_html)
+
+        # ── 渠道选择（表格下方）──────────────────────────────────────────────
+        st.multiselect(
+            "展示渠道",
+            options=_all_plt_labels,
+            default=_all_plt_labels,
+            key=_plt_key,
+        )
 
     # 导出
     if not df.empty:
