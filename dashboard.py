@@ -141,6 +141,43 @@ h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-baseweb="popover"] [aria-selected="true"] {
   background: rgba(0,113,227,.08) !important;
 }
+/* ── Sidebar section labels (uppercase caps) ── */
+[data-testid="stSidebar"] [data-testid="stRadio"] > label,
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-testid="stWidgetLabel"] > p,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] > label,
+[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] > p {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.6px !important;
+  color: #6e6e73 !important;
+}
+/* ── Sidebar radio → nav items ── */
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+  display: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] {
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  margin-bottom: 2px !important;
+  cursor: pointer !important;
+  transition: background .12s !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"]:hover {
+  background: #f5f5f7 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) {
+  background: rgba(0,113,227,.1) !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"]:has(input:checked) p {
+  color: #0071e3 !important;
+  font-weight: 500 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] p {
+  font-size: 14px !important;
+  color: #1d1d1f !important;
+  margin: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -343,7 +380,6 @@ def _analyze_movement(db, game: str, plt_key: str, rank_type: str,
 
 # ── 侧边栏 ─────────────────────────────────────────────────────────────────
 st.sidebar.title("游戏排行榜")
-st.sidebar.divider()
 
 db = get_db()
 
@@ -353,9 +389,16 @@ if not dates:
     st.code("python main.py fetch", language="bash")
     st.stop()
 
+st.sidebar.markdown(
+    f'<p style="font-size:12px;color:#6e6e73;margin:-8px 0 0;'
+    f'font-family:{_AP_FONT}">数据更新至 {dates[0]}</p>',
+    unsafe_allow_html=True,
+)
+st.sidebar.divider()
+
 # 页签导航（放最前，后续选项依赖它）
 _PAGES = ["国内排行榜", "国内开测表", "海外排行榜"]
-sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="collapsed")
+sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="visible")
 st.sidebar.divider()
 
 sel_date = st.sidebar.selectbox("日期", dates, index=0)
