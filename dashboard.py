@@ -855,19 +855,19 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
 
 
 _LAUNCH_TYPE_STYLE = {
-    "首发":   "color:#16a34a;font-weight:600",
-    "公测":   "color:#16a34a;font-weight:600",
-    "不删档": "color:#16a34a;font-weight:600",
-    "预约":   "color:#2563eb",
-    "删档":   "color:#d97706",
-    "测试":   "color:#d97706",
+    "首发":   "background:#e8f8ed;color:#1a7a3a",
+    "公测":   "background:#e8f8ed;color:#1a7a3a",
+    "不删档": "background:#e8f8ed;color:#1a7a3a",
+    "预约":   "background:#e8f0ff;color:#0055cc",
+    "删档":   "background:#fff3e0;color:#9a4f00",
+    "测试":   "background:#fff3e0;color:#9a4f00",
 }
 
 def _launch_type_style(t: str) -> str:
     for k, v in _LAUNCH_TYPE_STYLE.items():
         if k in t:
             return v
-    return "color:#6b7280"
+    return "background:#f5f5f7;color:#6e6e73"
 
 _LAUNCH_PLT_ORDER = ["bilibili", "taptap", "kuaibao", "wegame"]
 
@@ -881,7 +881,7 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
     active_date = sel_date if sel_date in launch_dates else launch_dates[0]
     rows = db.query_launches(fetch_date=active_date)
 
-    st.title(f"近期开测信息 — {active_date}")
+    st.title("国内开测表")
 
     if not rows:
         st.info(f"当前日期 {active_date} 暂无开测数据。")
@@ -889,33 +889,31 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
 
     df = pd.DataFrame(rows)
     from datetime import date as _date_cls
+    from collections import defaultdict
     today_str = _date_cls.today().isoformat()
 
     df["_plt_label"] = df["platform"].map(lambda x: PLATFORMS.get(x, x))
     df["_date"]      = df["launch_time"].str[:10].apply(
         lambda x: x if (x and len(x) == 10) else "待定"
     )
-    df["_time"]      = df["launch_time"].str[11:16]   # "HH:MM" or ""
+    df["_time"]      = df["launch_time"].str[11:16]
 
-    # ── 确定渠道列顺序 ──────────────────────────────────────────
+    # 确定渠道列顺序
     present_plts = set(df["platform"].unique())
     plt_keys  = [k for k in _LAUNCH_PLT_ORDER if k in present_plts]
     plt_keys += [k for k in present_plts if k not in _LAUNCH_PLT_ORDER]
-    plt_labels = [PLATFORMS.get(k, k) for k in plt_keys]
-
-    _all_launch_labels = plt_labels
+    _all_launch_labels = [PLATFORMS.get(k, k) for k in plt_keys]
     _lbl_to_key = {PLATFORMS.get(k, k): k for k in plt_keys}
+
     plt_labels = st.multiselect(
         "展示渠道",
         options=_all_launch_labels,
         default=_all_launch_labels,
         key=f"launch_plt_sort_{active_date}",
-        label_visibility="collapsed",
     )
     plt_keys = [_lbl_to_key[l] for l in plt_labels if l in _lbl_to_key]
 
-    # ── 按 (日期, 渠道) 聚合游戏列表 ─────────────────────────────
-    from collections import defaultdict
+    # 按 (日期, 渠道) 聚合游戏列表
     cell_map  = defaultdict(lambda: defaultdict(list))
     dates_set = set()
     for _, r in df.iterrows():
@@ -926,20 +924,23 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
             "time": r["_time"],
         })
 
-    # 只保留今天及之后的日期，待定放末尾
     sorted_dates = (
         sorted(d for d in dates_set if d != "待定" and d >= today_str)
         + (["待定"] if "待定" in dates_set else [])
     )
 
-    # ── HTML 表格 ─────────────────────────────────────────────
-    DIVIDER = "border-right:2px solid #d1d5db"
-    TIME_W  = "width:96px;min-width:96px"
+    # HTML 表格（Apple 风格）
+    DIVIDER = "border-right:1px solid #e8e8ed"
+    TIME_W  = "width:100px;min-width:100px"
     COL_W   = "width:220px;min-width:220px;max-width:220px"
-    th_time = f"padding:6px 10px;border-bottom:2px solid #e5e7eb;font-weight:600;{TIME_W};{DIVIDER}"
-    th_plt  = f"padding:6px 14px;border-bottom:2px solid #e5e7eb;font-weight:600;{COL_W};{DIVIDER}"
-    td_time = f"padding:5px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top;color:#6b7280;{TIME_W};{DIVIDER}"
-    td_cell = f"padding:5px 12px;border-bottom:1px solid #f3f4f6;vertical-align:top;{COL_W};{DIVIDER}"
+    th_time = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;font-size:11px;font-weight:600;"
+               f"text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{TIME_W};{DIVIDER}")
+    th_plt  = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;font-weight:600;"
+               f"text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{COL_W};{DIVIDER}")
+    td_time = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;vertical-align:top;"
+               f"color:#6e6e73;font-size:13px;font-family:{_AP_FONT};{TIME_W};{DIVIDER}")
+    td_cell = (f"padding:10px 12px;border-bottom:1px solid #e8e8ed;vertical-align:top;"
+               f"font-family:{_AP_FONT};{COL_W};{DIVIDER}")
 
     header = f'<th style="{th_time}">开测时间</th>' + "".join(
         f'<th style="{th_plt}">{p}</th>' for p in plt_labels
@@ -955,36 +956,66 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
                 cells += f'<td style="{td_cell}"></td>'
                 continue
             items_html = ""
-            shown = games[:MAX_PER_CELL]
-            for g in shown:
+            for g in games[:MAX_PER_CELL]:
                 t_style  = _launch_type_style(g["type"])
-                badge    = (f'<span style="font-size:11px;{t_style}">{g["type"]}</span> '
-                            if g["type"] else "")
-                time_pfx = (f'<span style="color:#9ca3af;font-size:11px">{g["time"]} </span>'
-                            if g["time"] else "")
+                badge    = (
+                    f'<span style="display:inline-block;padding:1px 7px;border-radius:20px;'
+                    f'font-size:11px;font-weight:500;margin-right:4px;{t_style}">{g["type"]}</span>'
+                    if g["type"] else ""
+                )
+                time_pfx = (
+                    f'<span style="color:#6e6e73;font-size:11px;margin-right:3px">{g["time"]}</span>'
+                    if g["time"] else ""
+                )
                 items_html += (
-                    f'<div style="margin-bottom:3px;line-height:1.4">'
-                    f'{time_pfx}{badge}<span>{g["name"]}</span>'
+                    f'<div style="display:flex;align-items:baseline;gap:4px;'
+                    f'margin-bottom:5px;line-height:1.4">'
+                    f'{time_pfx}{badge}'
+                    f'<span style="font-size:13px;color:#1d1d1f">{g["name"]}</span>'
                     f'</div>'
                 )
             if len(games) > MAX_PER_CELL:
                 extra = len(games) - MAX_PER_CELL
-                items_html += f'<div style="color:#9ca3af;font-size:11px">...等{extra}款</div>'
+                items_html += (f'<div style="color:#6e6e73;font-size:11px;margin-top:2px">'
+                               f'另有 {extra} 款</div>')
             cells += f'<td style="{td_cell}">{items_html}</td>'
-        rows_html += f"<tr>{cells}</tr>"
+        rows_html += f'<tr class="lch-tr">{cells}</tr>'
 
     table_html = f"""
-    <div style="overflow:auto;max-height:700px;border:1px solid #e5e7eb;border-radius:6px">
-      <table style="border-collapse:collapse;font-size:14px;table-layout:fixed">
-        <thead style="position:sticky;top:0;background:#f9fafb;z-index:1">
-          <tr>{header}</tr>
-        </thead>
-        <tbody>{rows_html}</tbody>
-      </table>
+    <style>
+      .lch-tbl .lch-tr:hover td {{ background: rgba(0,113,227,.04) !important; }}
+      .lch-tbl .lch-tr:last-child td {{ border-bottom: none !important; }}
+    </style>
+    <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                overflow:hidden;border:1px solid #e8e8ed;margin-bottom:8px">
+      <div style="padding:14px 20px;border-bottom:1px solid #e8e8ed">
+        <span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">
+          近期开测信息 — {active_date}
+        </span>
+      </div>
+      <div style="overflow:auto;max-height:700px">
+        <table class="lch-tbl" style="border-collapse:collapse;font-size:14px;
+               table-layout:fixed;font-family:{_AP_FONT}">
+          <thead style="position:sticky;top:0;background:#fff;z-index:1">
+            <tr>{header}</tr>
+          </thead>
+          <tbody>{rows_html}</tbody>
+        </table>
+      </div>
+      <div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;
+                  color:#6e6e73;font-family:{_AP_FONT};display:flex;gap:12px;flex-wrap:wrap">
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#34c759;margin-right:4px"></span>首发 / 公测</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#0071e3;margin-right:4px"></span>预约</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#ff9500;margin-right:4px"></span>删档 / 测试</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;
+              background:#8e8e93;margin-right:4px"></span>其他</span>
+      </div>
     </div>
     """
     st.html(table_html)
-    st.caption("绿色=首发/公测，蓝色=预约，橙色=删档测试，灰色=其他")
 
 
 # ── 主体 ────────────────────────────────────────────────────────────────────
