@@ -570,14 +570,14 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         ).reset_index()
         game_cols = [c for c in _sel_plt_labels if c in pivot.columns]
 
-        # 构建 HTML 表格（Apple 风格）
-        DIVIDER = "border-right:1px solid #e8e8ed"
+        # 构建 HTML 表格（Apple 风格，无竖线）
         COL_W   = "width:220px;min-width:220px;max-width:220px"
-        th_base = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;"
-                   f"font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{COL_W};{DIVIDER}")
-        th_rank = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;text-align:center;"
-                   f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;"
-                   f"color:#6e6e73;width:52px;min-width:52px;{DIVIDER}")
+        th_base = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;font-size:11px;"
+                   f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                   f"color:#6e6e73;{COL_W};background:#fafafa")
+        th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
+                   f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                   f"color:#6e6e73;width:56px;min-width:56px;background:#fafafa")
 
         header = f'<th style="{th_rank}">排名</th>' + "".join(
             f'<th style="{th_base}">{col}</th>' for col in game_cols
@@ -586,21 +586,21 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         rows_html = ""
         for _, row in pivot.iterrows():
             rank_val = int(row["排名"])
-            td_rank = (f"padding:10px 10px;text-align:center;color:#6e6e73;font-size:13px;"
-                       f"width:52px;{DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff")
-            td_game = f"padding:10px 12px;{COL_W};{DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff"
+            td_rank = (f"padding:11px 16px;text-align:left;color:#1d1d1f;font-size:14px;"
+                       f"font-weight:600;width:56px;border-bottom:1px solid #f2f2f7")
+            td_game = f"padding:11px 16px;{COL_W};border-bottom:1px solid #f2f2f7"
             cells = f'<td style="{td_rank}">{rank_val}</td>'
             for col in game_cols:
                 game = row.get(col)
                 if game is None or (isinstance(game, float) and pd.isna(game)):
-                    cells += f'<td style="{td_game}"></td>'
+                    cells += f'<td style="{td_game}"><span style="color:#c7c7cc">—</span></td>'
                     continue
                 plt_key = plt_label_to_key.get(col, "")
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
                 cell_inner = (
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-                    f'<span style="overflow:hidden;text-overflow:ellipsis">{game}</span>'
+                    f'<div style="display:flex;align-items:center;gap:10px">'
+                    f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
@@ -609,27 +609,27 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         title_str = f'{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比'
         table_html = f"""
         <style>
-          .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
+          .ap-tbl .ap-tr:hover td {{ background: #f5f5f7 !important; }}
           .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
         </style>
         <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
                     overflow:hidden;border:1px solid #e8e8ed;margin-bottom:8px">
-          <div style="padding:14px 20px;border-bottom:1px solid #e8e8ed">
-            <span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">
+          <div style="padding:16px 20px;border-bottom:1px solid #f2f2f7">
+            <span style="font-size:14px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">
               {title_str}
             </span>
           </div>
           <div style="overflow:auto;max-height:600px">
             <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
                    table-layout:fixed;font-family:{_AP_FONT};width:100%">
-              <thead style="position:sticky;top:0;background:#fff;z-index:1">
+              <thead style="position:sticky;top:0;z-index:1">
                 <tr>{header}</tr>
               </thead>
               <tbody>{rows_html}</tbody>
             </table>
           </div>
-          <div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;
-                      color:#6e6e73;font-family:{_AP_FONT}">
+          <div style="border-top:1px solid #f2f2f7;padding:10px 20px;font-size:12px;
+                      color:#aeaeb2;font-family:{_AP_FONT}">
             ▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化
           </div>
         </div>
@@ -757,14 +757,14 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
     # Build change map (compared to previous day) — reuse existing util
     change_map = build_rank_change_map(db, active_date, rank_type_ov)
 
-    # HTML table（Apple 风格）
-    _DIVIDER = "border-right:1px solid #e8e8ed"
+    # HTML table（Apple 风格，无竖线）
     _COL_W   = "width:220px;min-width:220px;max-width:220px"
-    _th_rank = (f"padding:10px 10px;border-bottom:1px solid #e8e8ed;text-align:center;"
-                f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;"
-                f"color:#6e6e73;width:52px;min-width:52px;{_DIVIDER}")
-    _th_game = (f"padding:10px 14px;border-bottom:1px solid #e8e8ed;font-size:11px;"
-                f"font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#6e6e73;{_COL_W};{_DIVIDER}")
+    _th_rank = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
+                f"font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                f"color:#6e6e73;width:56px;min-width:56px;background:#fafafa")
+    _th_game = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;font-size:11px;"
+                f"font-weight:600;text-transform:uppercase;letter-spacing:0.6px;"
+                f"color:#6e6e73;{_COL_W};background:#fafafa")
 
     def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title=""):
         header = f'<th style="{_th_rank}">排名</th>' + "".join(
@@ -772,37 +772,37 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
         )
         rows_html = ""
         for rank_val in range(1, min(max_rank, 30) + 1):
-            td_rank = (f"padding:10px 10px;text-align:center;color:#6e6e73;font-size:13px;"
-                       f"width:52px;{_DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff")
-            td_game = f"padding:10px 12px;{_COL_W};{_DIVIDER};border-bottom:1px solid #e8e8ed;background:#fff"
+            td_rank = (f"padding:11px 16px;text-align:left;color:#1d1d1f;font-size:14px;"
+                       f"font-weight:600;width:56px;border-bottom:1px solid #f2f2f7")
+            td_game = f"padding:11px 16px;{_COL_W};border-bottom:1px solid #f2f2f7"
             cells   = f'<td style="{td_rank}">{rank_val}</td>'
             for plt_key in plt_keys:
                 game = rank_maps[plt_key].get(rank_val)
                 if not game:
-                    cells += f'<td style="{td_game}"></td>'
+                    cells += f'<td style="{td_game}"><span style="color:#c7c7cc">—</span></td>'
                     continue
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
                 cell_inner = (
-                    f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
-                    f'<span style="overflow:hidden;text-overflow:ellipsis">{game}</span>'
+                    f'<div style="display:flex;align-items:center;gap:10px">'
+                    f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
                 cells += f'<td style="{td_game}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
         card_hdr = (
-            f'<div style="padding:14px 20px;border-bottom:1px solid #e8e8ed">'
-            f'<span style="font-size:13px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">'
+            f'<div style="padding:16px 20px;border-bottom:1px solid #f2f2f7">'
+            f'<span style="font-size:14px;font-weight:600;color:#1d1d1f;font-family:{_AP_FONT}">'
             f'{section_title}</span></div>'
         ) if section_title else ""
         caption = (
-            f'<div style="border-top:1px solid #e8e8ed;padding:10px 20px;font-size:12px;'
-            f'color:#6e6e73;font-family:{_AP_FONT}">'
+            f'<div style="border-top:1px solid #f2f2f7;padding:10px 20px;font-size:12px;'
+            f'color:#aeaeb2;font-family:{_AP_FONT}">'
             f'▲▼ 与前一日排名对比，NEW 表示新上榜，— 表示未变化</div>'
         ) if change_map else ""
         return f"""
         <style>
-          .ap-tbl .ap-tr:hover td {{ background: rgba(0,113,227,.05) !important; }}
+          .ap-tbl .ap-tr:hover td {{ background: #f5f5f7 !important; }}
           .ap-tbl .ap-tr:last-child td {{ border-bottom: none !important; }}
         </style>
         <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
@@ -811,7 +811,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
           <div style="overflow:auto;max-height:600px">
             <table class="ap-tbl" style="border-collapse:collapse;font-size:14px;
                    table-layout:fixed;font-family:{_AP_FONT};width:100%">
-              <thead style="position:sticky;top:0;background:#fff;z-index:1">
+              <thead style="position:sticky;top:0;z-index:1">
                 <tr>{header}</tr>
               </thead>
               <tbody>{rows_html}</tbody>
