@@ -65,6 +65,13 @@ body, .stApp, [data-testid="stAppViewContainer"],
   width: 240px !important;
 }
 [data-testid="stSidebar"] * { font-family: var(--ap-font) !important; }
+/* 还原 Material Symbols 图标字体（侧边栏折叠按钮） */
+[data-testid="stSidebar"] button span,
+[data-testid="stSidebarHeader"] button span,
+[data-testid="collapsedControl"] span,
+[data-testid="collapsedControl"] button span {
+  font-family: "Material Symbols Rounded", "Material Icons" !important;
+}
 [data-testid="stSidebar"] h1 {
   font-size: 17px !important;
   font-weight: 600 !important;
