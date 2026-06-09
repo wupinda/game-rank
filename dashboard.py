@@ -43,6 +43,11 @@ body, .stApp, [data-testid="stAppViewContainer"],
   font-family: var(--ap-font) !important;
   background: var(--ap-bg) !important;
 }
+[data-testid="stAppViewContainer"] > .main .block-container {
+  padding-left: 2rem !important;
+  padding-right: 2rem !important;
+  max-width: 100% !important;
+}
 /* 针对性覆盖 Streamlit 组件字体，排除 Material Symbols 图标 */
 [data-testid="stAppViewContainer"] p,
 [data-testid="stAppViewContainer"] label,
