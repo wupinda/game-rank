@@ -80,35 +80,52 @@ h1, h2, h3 {
 h1 { font-size: 28px !important; font-weight: 700 !important; }
 h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-testid="stCaptionContainer"] p { color: var(--ap-sub) !important; font-size: 12px !important; }
-/* Multiselect 外框 */
+/* Multiselect — 去掉外框，只保留 chip 标签 */
+[data-testid="stMultiSelect"] > div,
+[data-testid="stMultiSelect"] > div > div,
+[data-testid="stMultiSelect"] [data-baseweb="select"],
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child {
-  border: 1px solid #e8e8ed !important;
-  border-radius: 12px !important;
-  background: #f5f5f7 !important;
+  border: none !important;
+  background: transparent !important;
   box-shadow: none !important;
-  min-height: 40px !important;
-  padding: 4px 8px !important;
+  padding: 0 !important;
+  min-height: 0 !important;
 }
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div:first-child:focus-within {
-  border-color: var(--ap-accent) !important;
-  box-shadow: 0 0 0 3px rgba(0,113,227,.12) !important;
+/* 隐藏右侧下拉箭头和清空按钮区域 */
+[data-testid="stMultiSelect"] [data-baseweb="select"] > div:last-child {
+  display: none !important;
 }
-/* Multiselect 标签 */
+/* Chip 标签 */
 [data-testid="stMultiSelect"] [data-baseweb="tag"] {
-  background: #ffffff !important;
-  border: 1px solid #c7c7cc !important;
+  background: #f5f5f7 !important;
+  border: 1px solid #d2d2d7 !important;
   border-radius: 20px !important;
   color: var(--ap-text) !important;
   font-size: 12px !important;
-  padding: 2px 4px 2px 10px !important;
+  font-family: var(--ap-font) !important;
+  padding: 3px 6px 3px 10px !important;
+  margin: 2px 3px !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="tag"] span {
   color: var(--ap-text) !important;
+  font-size: 12px !important;
 }
 [data-testid="stMultiSelect"] [data-baseweb="tag"] svg {
-  color: var(--ap-sub) !important;
+  color: #8e8e93 !important;
+  width: 14px !important;
+  height: 14px !important;
 }
-/* Multiselect 下拉框 */
+/* 输入框光标区域（用于触发下拉） */
+[data-testid="stMultiSelect"] input {
+  font-size: 12px !important;
+  color: var(--ap-accent) !important;
+  min-width: 60px !important;
+}
+[data-testid="stMultiSelect"] input::placeholder {
+  color: var(--ap-accent) !important;
+  font-size: 12px !important;
+}
+/* 下拉菜单 */
 [data-baseweb="popover"] [data-baseweb="menu"] {
   border-radius: 12px !important;
   border: 1px solid #e8e8ed !important;
@@ -118,7 +135,7 @@ h2 { font-size: 20px !important; font-weight: 600 !important; }
 [data-baseweb="popover"] [role="option"] {
   font-size: 14px !important;
   color: var(--ap-text) !important;
-  border-radius: 0 !important;
+  font-family: var(--ap-font) !important;
 }
 [data-baseweb="popover"] [role="option"]:hover,
 [data-baseweb="popover"] [aria-selected="true"] {
