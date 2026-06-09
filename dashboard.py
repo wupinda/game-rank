@@ -38,11 +38,19 @@ st.markdown("""
   --ap-shadow:  0 2px 12px rgba(0,0,0,.08);
   --ap-font:    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
-body, .stApp, [data-testid="stAppViewContainer"] {
+body, .stApp, [data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > .main {
   font-family: var(--ap-font) !important;
   background: var(--ap-bg) !important;
 }
-.stApp *, [data-testid="stAppViewContainer"] * {
+/* 针对性覆盖 Streamlit 组件字体，排除 Material Symbols 图标 */
+[data-testid="stAppViewContainer"] p,
+[data-testid="stAppViewContainer"] label,
+[data-testid="stAppViewContainer"] input,
+[data-testid="stAppViewContainer"] select,
+[data-testid="stAppViewContainer"] textarea,
+[data-testid="stAppViewContainer"] [data-testid],
+[data-testid="stAppViewContainer"] .stMarkdown {
   font-family: var(--ap-font) !important;
 }
 [data-testid="stSidebar"] {
