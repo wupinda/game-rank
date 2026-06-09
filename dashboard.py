@@ -36,10 +36,13 @@ st.markdown("""
   --ap-red-bg:  #fff0ef;
   --ap-blue-bg: #e8f0ff;
   --ap-shadow:  0 2px 12px rgba(0,0,0,.08);
-  --ap-font:    -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --ap-font:    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
-.stApp, [data-testid="stAppViewContainer"] > .main {
+body, .stApp, [data-testid="stAppViewContainer"] {
+  font-family: var(--ap-font) !important;
   background: var(--ap-bg) !important;
+}
+.stApp *, [data-testid="stAppViewContainer"] * {
   font-family: var(--ap-font) !important;
 }
 [data-testid="stSidebar"] {
@@ -68,11 +71,16 @@ st.markdown("""
   margin-top: -4px !important;
   margin-bottom: -4px !important;
 }
-/* 立即抓取数据按钮全宽 */
+/* 立即抓取数据按钮：全宽 + 与 selectbox 对齐 */
+[data-testid="stSidebar"] [data-testid="stButton"],
+[data-testid="stSidebar"] [data-testid="stButton"] > button,
 [data-testid="stSidebar"] .stButton,
 [data-testid="stSidebar"] .stButton > button {
   width: 100% !important;
   display: block !important;
+  box-sizing: border-box !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 [data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
   border: 1px solid #c7c7cc !important;
