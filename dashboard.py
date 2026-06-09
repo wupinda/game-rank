@@ -56,13 +56,13 @@ body, .stApp, [data-testid="stAppViewContainer"],
 [data-testid="stSidebar"] {
   background: var(--ap-card) !important;
   border-right: 1px solid var(--ap-div) !important;
-  min-width: 240px !important;
-  max-width: 240px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
 }
 [data-testid="stSidebar"] > div {
-  min-width: 240px !important;
-  max-width: 240px !important;
-  width: 240px !important;
+  min-width: 200px !important;
+  max-width: 200px !important;
+  width: 200px !important;
 }
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
   padding-top: 20px !important;
