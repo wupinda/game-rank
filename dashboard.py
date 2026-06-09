@@ -26,7 +26,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 :root {
-  --ap-bg:      #f5f5f7;
+  --ap-bg:      #ffffff;
   --ap-card:    #ffffff;
   --ap-text:    #1d1d1f;
   --ap-sub:     #6e6e73;
