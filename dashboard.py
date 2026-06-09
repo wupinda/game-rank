@@ -381,20 +381,6 @@ else:
     sel_rank_type = rank_type_labels[sel_rank_label]
 
 st.sidebar.divider()
-
-# 自动刷新控制
-auto_refresh = st.sidebar.toggle("自动刷新", value=False)
-if auto_refresh:
-    refresh_mins = st.sidebar.selectbox(
-        "刷新间隔",
-        options=[1, 5, 10, 30],
-        index=1,
-        format_func=lambda x: f"{x} 分钟",
-    )
-else:
-    refresh_mins = 5
-
-st.sidebar.divider()
 if st.sidebar.button("立即抓取数据"):
     with st.spinner("正在抓取，请稍候…"):
         import subprocess
@@ -996,17 +982,7 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
 
 # ── 主体 ────────────────────────────────────────────────────────────────────
 if sel_page == "国内排行榜":
-    if auto_refresh:
-        @st.fragment(run_every=timedelta(minutes=refresh_mins))
-        def auto_render():
-            _db = get_db()
-            latest_dates = _db.available_dates()
-            active_date  = sel_date if sel_date in latest_dates else (latest_dates[0] if latest_dates else sel_date)
-            render_data(active_date, sel_platform, sel_rank_type)
-            st.caption(f"🕐 自动刷新中 · 上次更新: {datetime.now().strftime('%H:%M:%S')} · 间隔 {refresh_mins} 分钟")
-        auto_render()
-    else:
-        render_data(sel_date, sel_platform, sel_rank_type)
+    render_data(sel_date, sel_platform, sel_rank_type)
 
 elif sel_page == "国内开测表":
     render_launches(db, sel_date, sel_platform)
