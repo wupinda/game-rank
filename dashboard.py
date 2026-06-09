@@ -599,7 +599,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
                 cell_inner = (
-                    f'<div style="display:flex;align-items:center;gap:10px">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
@@ -784,7 +784,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
                 cell_inner = (
-                    f'<div style="display:flex;align-items:center;gap:10px">'
+                    f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
