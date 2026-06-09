@@ -95,16 +95,20 @@ body, .stApp, [data-testid="stAppViewContainer"],
   margin-top: -4px !important;
   margin-bottom: -4px !important;
 }
-/* 立即抓取数据按钮：全宽 + 与 selectbox 对齐 */
+/* 立即抓取数据按钮：与 selectbox 等宽、等高 */
 [data-testid="stSidebar"] [data-testid="stButton"],
-[data-testid="stSidebar"] [data-testid="stButton"] > button,
-[data-testid="stSidebar"] .stButton,
-[data-testid="stSidebar"] .stButton > button {
+[data-testid="stSidebar"] .stButton {
   width: 100% !important;
   display: block !important;
+}
+[data-testid="stSidebar"] [data-testid="stButton"] > button,
+[data-testid="stSidebar"] .stButton > button {
+  width: 100% !important;
   box-sizing: border-box !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+  margin: 0 !important;
+  padding: 7px 12px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
 }
 [data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
   border: 1px solid #c7c7cc !important;
