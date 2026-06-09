@@ -64,13 +64,11 @@ body, .stApp, [data-testid="stAppViewContainer"],
   max-width: 240px !important;
   width: 240px !important;
 }
-[data-testid="stSidebar"] * { font-family: var(--ap-font) !important; }
-/* 还原 Material Symbols 图标字体（侧边栏折叠按钮） */
-[data-testid="stSidebar"] button span,
-[data-testid="stSidebarHeader"] button span,
-[data-testid="collapsedControl"] span,
-[data-testid="collapsedControl"] button span {
-  font-family: "Material Symbols Rounded", "Material Icons" !important;
+/* 针对性设置侧边栏字体，不触碰 button/span（Material Symbols 图标） */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] input {
+  font-family: var(--ap-font) !important;
 }
 [data-testid="stSidebar"] h1 {
   font-size: 17px !important;
