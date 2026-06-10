@@ -728,10 +728,10 @@ _DOMESTIC_PLT_ORDER = [
 ]
 
 _OVERSEAS_PLT_ORDER = [
-    "rustore",
-    "appstore_us", "appstore_jp", "appstore_kr", "appstore_gb",
-    "googleplay_us", "googleplay_jp", "googleplay_kr", "googleplay_gb",
-    "appgallery", "galaxystore", "getapps", "amazon",
+    "appstore_us", "googleplay_us",
+    "rustore", "appgallery", "galaxystore", "getapps", "amazon",
+    "appstore_jp", "appstore_kr", "appstore_gb",
+    "googleplay_jp", "googleplay_kr", "googleplay_gb",
 ]
 _PC_PLT_ORDER = [
     "steam_us", "steam_jp", "steam_kr", "steam_gb",
