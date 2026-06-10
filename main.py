@@ -23,8 +23,20 @@ console = Console(highlight=False)
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
-    with open(config_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    # Streamlit Cloud / CI: no config.yaml, fall back to environment variables
+    return {
+        "supabase": {
+            "url": os.environ.get("SUPABASE_URL", ""),
+            "key": os.environ.get("SUPABASE_KEY", ""),
+        },
+        "general":  {"top_n": 20, "output_dir": "/tmp"},
+        "platforms": {},
+        "logging":  {"level": "INFO", "file": "/tmp/game_rank.log"},
+        "proxy":    {"enabled": False},
+    }
 
 
 def setup_logging(cfg: dict):

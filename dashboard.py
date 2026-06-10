@@ -497,16 +497,23 @@ st.sidebar.divider()
 if st.sidebar.button("立即抓取数据"):
     with st.spinner("正在抓取，请稍候…"):
         import subprocess
+        _fetch_env = {**os.environ}
+        try:
+            _fetch_env["SUPABASE_URL"] = st.secrets["SUPABASE_URL"]
+            _fetch_env["SUPABASE_KEY"] = st.secrets["SUPABASE_KEY"]
+        except Exception:
+            pass  # 本地运行时 secrets 不存在，依赖 config.yaml 或已有环境变量
         result = subprocess.run(
             [sys.executable, "main.py", "fetch"],
             capture_output=True, text=True,
             cwd=os.path.dirname(os.path.abspath(__file__)),
+            env=_fetch_env,
         )
     if result.returncode == 0:
         st.sidebar.success("抓取完成！")
         st.rerun()
     else:
-        st.sidebar.error(f"抓取失败：{result.stderr[:200]}")
+        st.sidebar.error(f"抓取失败：{result.stderr[:500]}")
 
 
 # ── 数据展示（支持自动刷新）─────────────────────────────────────────────────
