@@ -514,7 +514,12 @@ def render_data(sel_date, sel_platform, sel_rank_type):
     if not df.empty and sel_rank_type:
         change_map = build_rank_change_map(db, sel_date, sel_rank_type)
 
-        _all_plt_labels = sorted(plt_label_to_key.keys())
+        _key_to_label = {v: k for k, v in plt_label_to_key.items()}
+        _all_plt_labels = (
+            [_key_to_label[k] for k in _DOMESTIC_PLT_ORDER if k in _key_to_label]
+            + [l for l in plt_label_to_key if l not in
+               {_key_to_label[k] for k in _DOMESTIC_PLT_ORDER if k in _key_to_label}]
+        )
 
         # ── 今日动态概述（用全量平台数据）────────────────────────────────────
         if change_map:
@@ -716,6 +721,11 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         else:
             st.info("请选择游戏和平台后查看趋势。")
 
+
+_DOMESTIC_PLT_ORDER = [
+    "appstore", "taptap", "bilibili", "kuaibao",
+    "appgallery_cn", "xiaomi", "myapp", "wegame",
+]
 
 _OVERSEAS_PLT_ORDER = [
     "rustore",
