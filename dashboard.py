@@ -452,7 +452,7 @@ st.sidebar.markdown(
 st.sidebar.divider()
 
 # 页签导航（放最前，后续选项依赖它）
-_PAGES = ["国内排行榜", "国内开测表", "海外排行榜"]
+_PAGES = ["国内排行榜", "国内开测表", "海外排行榜-移动", "海外排行榜-PC"]
 sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="visible")
 st.sidebar.divider()
 
@@ -463,7 +463,7 @@ sel_platform = None
 # 榜单类型——海外只显示下载榜/畅销榜/活跃榜（活跃榜仅 Steam 有）
 if sel_page == "国内开测表":
     sel_rank_type = None
-elif sel_page == "海外排行榜":
+elif sel_page in ("海外排行榜-移动", "海外排行榜-PC"):
     _overseas_rank_opts = {"下载榜": "download", "畅销榜": "revenue", "活跃榜": "active"}
     sel_rank_label = st.sidebar.selectbox("榜单类型", list(_overseas_rank_opts.keys()))
     sel_rank_type = _overseas_rank_opts[sel_rank_label]
@@ -730,8 +730,8 @@ _PC_PLT_ORDER = [
 ]
 _OVERSEAS_RANK_TYPES = {"download", "revenue", "active"}
 
-def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
-    st.title("海外排行榜")
+def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: str = "mobile"):
+    st.title("海外排行榜 · 移动" if section == "mobile" else "海外排行榜 · PC")
 
     overseas_dates = db.available_dates()
     if not overseas_dates:
@@ -874,56 +874,57 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str):
         if sections:
             st.html(_dynamic_card_html(sections))
 
-    if present_plts:
-        _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
-        _mob_lbl_to_key = {PLATFORMS.get(k, k): k for k in present_plts}
+    if section == "mobile":
+        if present_plts:
+            _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
+            _mob_lbl_to_key = {PLATFORMS.get(k, k): k for k in present_plts}
 
-        _render_summary(set(present_plts), active_date)
+            _render_summary(set(present_plts), active_date)
 
-        _sel_mob_labels = st.multiselect(
-            "展示渠道",
-            options=_mob_labels_all,
-            default=_mob_labels_all,
-            key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
-        )
-        present_plts = [_mob_lbl_to_key[l] for l in _sel_mob_labels if l in _mob_lbl_to_key]
-        plt_labels = _sel_mob_labels
+            _sel_mob_labels = st.multiselect(
+                "展示渠道",
+                options=_mob_labels_all,
+                default=_mob_labels_all,
+                key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
+            )
+            present_plts = [_mob_lbl_to_key[l] for l in _sel_mob_labels if l in _mob_lbl_to_key]
+            plt_labels = _sel_mob_labels
 
-        rank_maps: dict[str, dict[int, str]] = {
-            k: {r["rank_pos"]: r["game_name"] for r in plt_data[k]} for k in present_plts
-        }
-        max_rank = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
-        st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank, section_title="移动平台排行榜"))
-    else:
-        st.info("移动平台暂无该榜单数据。")
+            rank_maps: dict[str, dict[int, str]] = {
+                k: {r["rank_pos"]: r["game_name"] for r in plt_data[k]} for k in present_plts
+            }
+            max_rank = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
+            st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank))
+        else:
+            st.info("移动平台暂无该榜单数据。")
 
-    # ── PC 平台排行榜 ─────────────────────────────────────────────────────────
-    pc_plts = pc_plts_pre
-    pc_data = pc_data_pre
+    else:  # section == "pc"
+        pc_plts = pc_plts_pre
+        pc_data = pc_data_pre
 
-    if not pc_plts:
-        st.info(f"当前日期 {active_date} 暂无 PC 平台数据，请先抓取。")
-        st.code("python main.py fetch --platform steam epicgames msstore", language="bash")
-    else:
-        _pc_labels_all = [PLATFORMS.get(k, k) for k in pc_plts]
-        _pc_lbl_to_key = {PLATFORMS.get(k, k): k for k in pc_plts}
+        if not pc_plts:
+            st.info(f"当前日期 {active_date} 暂无 PC 平台数据，请先抓取。")
+            st.code("python main.py fetch --platform steam_us epicgames msstore_us", language="bash")
+        else:
+            _pc_labels_all = [PLATFORMS.get(k, k) for k in pc_plts]
+            _pc_lbl_to_key = {PLATFORMS.get(k, k): k for k in pc_plts}
 
-        _render_summary(set(pc_plts), active_date)
+            _render_summary(set(pc_plts), active_date)
 
-        _sel_pc_labels = st.multiselect(
-            "展示渠道",
-            options=_pc_labels_all,
-            default=_pc_labels_all,
-            key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
-        )
-        pc_plts = [_pc_lbl_to_key[l] for l in _sel_pc_labels if l in _pc_lbl_to_key]
-        pc_labels = _sel_pc_labels
+            _sel_pc_labels = st.multiselect(
+                "展示渠道",
+                options=_pc_labels_all,
+                default=_pc_labels_all,
+                key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
+            )
+            pc_plts = [_pc_lbl_to_key[l] for l in _sel_pc_labels if l in _pc_lbl_to_key]
+            pc_labels = _sel_pc_labels
 
-        pc_rank_maps: dict[str, dict[int, str]] = {
-            k: {r["rank_pos"]: r["game_name"] for r in pc_data[k]} for k in pc_plts
-        }
-        pc_max_rank = max((max(rm.keys()) for rm in pc_rank_maps.values() if rm), default=20)
-        st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank, section_title="PC 平台排行榜"))
+            pc_rank_maps: dict[str, dict[int, str]] = {
+                k: {r["rank_pos"]: r["game_name"] for r in pc_data[k]} for k in pc_plts
+            }
+            pc_max_rank = max((max(rm.keys()) for rm in pc_rank_maps.values() if rm), default=20)
+            st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank))
 
 
 _LAUNCH_TYPE_STYLE = {
@@ -1100,5 +1101,8 @@ if sel_page == "国内排行榜":
 elif sel_page == "国内开测表":
     render_launches(db, sel_date, sel_platform)
 
+elif sel_page == "海外排行榜-移动":
+    render_overseas(db, sel_date, sel_rank_type, section="mobile")
+
 else:
-    render_overseas(db, sel_date, sel_rank_type)
+    render_overseas(db, sel_date, sel_rank_type, section="pc")
