@@ -684,7 +684,12 @@ def render_data(sel_date, sel_platform, sel_rank_type):
     if game_options:
         tr_col1, tr_col2 = st.columns([3, 1])
         with tr_col1:
-            sel_game = st.selectbox("选择游戏", game_options)
+            sel_game = st.selectbox(
+                "选择游戏",
+                options=game_options,
+                index=None,
+                placeholder="输入游戏名搜索…",
+            )
         with tr_col2:
             _game_plt_labels = (
                 sorted(df[df["游戏名"] == sel_game]["平台"].unique().tolist())
