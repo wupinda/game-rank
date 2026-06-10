@@ -1,8 +1,8 @@
 """
-华为 AppGallery 游戏榜单（全球区）
+华为 AppGallery 游戏榜单（国内 CN 区）
 两步鉴权：先 POST getInterfaceCode 获取 JWT，再带 Interface-Code header 查排行。
-base: web-dra.hispace.dbankcloud.com/edge  (新加坡 / 全球)
-tabUri: Games > Top 固定 ID，可通过 internal.getTemplate 动态发现。
+base: web-drcn.hispace.dbankcloud.com/edge  (中国北区)
+tabUri: 游戏排行固定 ID，可通过 internal.getTemplate 动态发现。
 """
 import time
 import logging
@@ -12,12 +12,12 @@ logger = logging.getLogger(__name__)
 
 _UA        = ("Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 "
               "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
-_EDGE_BASE = "https://web-dra.hispace.dbankcloud.com/edge"
+_EDGE_BASE = "https://web-drcn.hispace.dbankcloud.com/edge"
 _TOKEN_URL = f"{_EDGE_BASE}/webedge/getInterfaceCode"
 _DATA_URL  = f"{_EDGE_BASE}/uowap/index"
 
-# 全球区 Games > Top tabId（通过 internal.getTemplate 发现）
-_GAME_RANK_URI = "a0369805ff6b47b5a47217473c7cfd22"
+# 游戏排行 tabId（通过 internal.getTemplate 发现的固定值）
+_GAME_RANK_URI = "fb4b62896f47464fb0053045368b2ac4"  # 畅销榜
 
 _TOKEN_HEADERS = {
     "User-Agent":    _UA,
@@ -28,9 +28,9 @@ _TOKEN_HEADERS = {
 }
 
 
-class AppGalleryScraper(BaseScraper):
-    PLATFORM = "appgallery"
-    SUPPORTED_RANK_TYPES = ["download"]
+class AppGalleryCNScraper(BaseScraper):
+    PLATFORM = "appgallery_cn"
+    SUPPORTED_RANK_TYPES = ["revenue"]
 
     def _get_token(self) -> str:
         try:
@@ -41,10 +41,11 @@ class AppGalleryScraper(BaseScraper):
                 timeout=10,
             )
             resp.raise_for_status()
+            # Response is a quoted JWT string, e.g. '"eyJ..."'
             token = resp.text.strip().strip('"')
             return token
         except Exception as e:
-            logger.warning(f"AppGallery 获取 token 失败: {e}")
+            logger.warning(f"AppGallery CN 获取 token 失败: {e}")
             return ""
 
     def fetch(self, rank_type: str) -> list:
@@ -79,11 +80,11 @@ class AppGalleryScraper(BaseScraper):
                 resp.raise_for_status()
                 data = resp.json()
             except Exception as e:
-                logger.warning(f"AppGallery 数据请求失败 (page {page}): {e}")
+                logger.warning(f"AppGallery CN 数据请求失败 (page {page}): {e}")
                 break
 
             if data.get("rtnCode") != 0:
-                logger.warning(f"AppGallery rtnCode={data.get('rtnCode')}: {data.get('rtnDesc', '')}")
+                logger.warning(f"AppGallery CN rtnCode={data.get('rtnCode')}: {data.get('rtnDesc', '')}")
                 break
 
             entries = []
@@ -115,5 +116,5 @@ class AppGalleryScraper(BaseScraper):
             page += 1
 
         if not all_items:
-            logger.warning("AppGallery 未解析到数据")
+            logger.warning("AppGallery CN 未解析到数据")
         return all_items

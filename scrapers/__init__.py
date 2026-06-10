@@ -12,6 +12,7 @@ from .wegame_launch     import WeGameLaunchScraper
 from .xiaomi_new        import XiaomiNewScraper
 from .rustore            import RuStoreScraper
 from .appgallery         import AppGalleryScraper
+from .appgallery_cn      import AppGalleryCNScraper
 from .galaxystore        import GalaxyStoreScraper
 from .getapps            import GetAppsScraper
 from .amazon_appstore    import AmazonAppStoreScraper
@@ -35,6 +36,7 @@ ALL_SCRAPERS = {
     "myapp":    MyAppScraper,
     # 海外移动平台
     "rustore":     RuStoreScraper,
+    "appgallery_cn": AppGalleryCNScraper,
     "appgallery":  AppGalleryScraper,
     "galaxystore": GalaxyStoreScraper,
     "getapps":     GetAppsScraper,

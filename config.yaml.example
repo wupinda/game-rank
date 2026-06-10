@@ -25,7 +25,8 @@ platforms:
   wegame: true
   myapp: true
   # 海外移动平台
-  appgallery: true    # 华为 AppGallery
+  appgallery_cn: true # 华为 AppGallery（国内）
+  appgallery: true    # 华为 AppGallery（全球）
   galaxystore: true   # 三星 Galaxy Store
   getapps: true       # 小米 GetApps（国际版）
   amazon: true        # Amazon Appstore

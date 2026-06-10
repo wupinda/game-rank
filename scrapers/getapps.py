@@ -1,65 +1,74 @@
 """
 小米 GetApps 海外商店游戏榜单
-API: global.intl.miui.com/channel/categorylist.do
-categoryId 2 = Games；type 5 = 热门下载，type 7 = 热玩
-接口结构与国内小米相似，复用同类字段解析逻辑。
+API: global.app.mi.com/intl/web/api/category/{categoryId}
+categoryId 101 = Action（热门分类）；逐页加载，page 从 1 开始，每页 ~32 条。
+使用 lo=IN（印度，数据最全）、la=en。
 """
 import logging
 from .base import BaseScraper, RankItem
 
 logger = logging.getLogger(__name__)
 
-_API = "https://global.intl.miui.com/channel/categorylist.do"
+_BASE = "https://global.app.mi.com/intl/web/api/category"
 
-_TYPE_MAP = {
-    "download": 5,
-    "active":   7,
-}
+# 优先抓热门大类（Action/RPG/Strategy）
+_CATEGORIES = [101, 112, 115]   # Action, Role Playing, Strategy
 
 _HEADERS = {
-    "Referer":         "https://global.intl.miui.com/",
+    "User-Agent":      ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/124.0.0.0 Safari/537.36"),
     "Accept":          "application/json, text/plain, */*",
     "Accept-Language": "en-US,en;q=0.9",
+    "Referer":         "https://global.app.mi.com/",
 }
+
+_PARAMS = {"page": 1, "lo": "IN", "la": "en"}
 
 
 class GetAppsScraper(BaseScraper):
     PLATFORM = "getapps"
-    SUPPORTED_RANK_TYPES = ["download", "active"]
+    SUPPORTED_RANK_TYPES = ["download"]
 
     def fetch(self, rank_type: str) -> list:
-        type_id = _TYPE_MAP.get(rank_type, _TYPE_MAP["download"])
-
-        params = {
-            "categoryId": 2,
-            "pageIndex":  1,
-            "pageSize":   self.TOP_N,
-            "type":       type_id,
-        }
-
-        try:
-            resp = self._get(_API, params=params, headers=_HEADERS)
-            resp.raise_for_status()
-            data = resp.json()
-        except Exception as e:
-            logger.warning(f"GetApps 接口请求失败: {e}")
-            return []
-
-        raw_list = data.get("list") or []
+        seen: set[str] = set()
         items = []
-        for item in raw_list[: self.TOP_N]:
-            gi   = item.get("gameInfo") or item
-            name = (gi.get("displayName") or gi.get("appName") or gi.get("name") or "").strip()
-            if not name:
+
+        for cat_id in _CATEGORIES:
+            if len(items) >= self.TOP_N:
+                break
+            try:
+                resp = self._get(
+                    f"{_BASE}/{cat_id}",
+                    params=_PARAMS,
+                    headers=_HEADERS,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as e:
+                logger.warning(f"GetApps category {cat_id} 请求失败: {e}")
                 continue
-            items.append(RankItem(
-                rank=len(items) + 1,
-                name=name,
-                platform=self.PLATFORM,
-                rank_type=rank_type,
-                game_id=str(gi.get("appId") or gi.get("gameId") or ""),
-                developer=gi.get("developerName") or gi.get("developer") or "",
-                icon_url=gi.get("icon") or gi.get("iconUrl") or "",
-                rating=float(gi.get("userScore") or gi.get("rating") or 0),
-            ))
+
+            for block in data.get("list") or []:
+                block_data = block.get("data") or {}
+                app_list = block_data.get("listApp") or []
+                for app in app_list:
+                    name = (app.get("displayName") or app.get("appName") or "").strip()
+                    if not name or name in seen:
+                        continue
+                    seen.add(name)
+                    items.append(RankItem(
+                        rank=len(items) + 1,
+                        name=name,
+                        platform=self.PLATFORM,
+                        rank_type=rank_type,
+                        game_id=app.get("packageName") or str(app.get("id") or ""),
+                        developer=app.get("developerName") or app.get("publisherName") or "",
+                        icon_url=app.get("icon") or "",
+                    ))
+                    if len(items) >= self.TOP_N:
+                        break
+
+        if not items:
+            logger.warning("GetApps 未解析到数据")
         return items

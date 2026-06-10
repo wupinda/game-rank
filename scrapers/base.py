@@ -34,6 +34,8 @@ PLATFORMS = {
     "googleplay_jp": "Google Play (JP)",
     "googleplay_kr": "Google Play (KR)",
     "googleplay_gb": "Google Play (GB)",
+    # AppGallery 国内
+    "appgallery_cn": "华为",
     # 海外其他移动平台
     "appgallery":  "AppGallery",
     "galaxystore": "Galaxy Store",
