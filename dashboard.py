@@ -259,8 +259,23 @@ def get_db():
     return Database(url=url, key=key)
 
 
+@st.cache_data(ttl=300)
+def _cached_query(_db, platform=None, rank_type=None, fetch_date=None):
+    return _db.query(platform=platform, rank_type=rank_type, fetch_date=fetch_date)
+
+
+@st.cache_data(ttl=300)
+def _cached_dates(_db):
+    return _db.available_dates()
+
+
+@st.cache_data(ttl=300)
+def _cached_trend(_db, game_name, platform, rank_type):
+    return _db.trend(game_name, platform, rank_type)
+
+
 def load_data(db: Database, platform=None, rank_type=None, fetch_date=None) -> pd.DataFrame:
-    rows = db.query(platform=platform, rank_type=rank_type, fetch_date=fetch_date)
+    rows = _cached_query(db, platform=platform, rank_type=rank_type, fetch_date=fetch_date)
     if not rows:
         return pd.DataFrame()
     df = pd.DataFrame(rows)
@@ -358,16 +373,16 @@ def _ap_badge(chg: str) -> str:
 
 def build_rank_change_map(db: Database, sel_date: str, rank_type: str) -> dict:
     """返回 {(platform, game_name): change_str}，无前日数据时返回空 dict。"""
-    dates = db.available_dates()
+    dates = _cached_dates(db)
     if sel_date not in dates:
         return {}
     idx = dates.index(sel_date)
     if idx + 1 >= len(dates):
         return {}
     prev_date = dates[idx + 1]
-    prev_rows = db.query(rank_type=rank_type, fetch_date=prev_date)
+    prev_rows = _cached_query(db, rank_type=rank_type, fetch_date=prev_date)
     prev_lookup = {(r["platform"], r["game_name"]): r["rank_pos"] for r in prev_rows}
-    curr_rows = db.query(rank_type=rank_type, fetch_date=sel_date)
+    curr_rows = _cached_query(db, rank_type=rank_type, fetch_date=sel_date)
     change_map = {}
     for r in curr_rows:
         key = (r["platform"], r["game_name"])
@@ -389,14 +404,14 @@ def build_rank_change_map(db: Database, sel_date: str, rank_type: str) -> dict:
 def _analyze_movement(db, game: str, plt_key: str, rank_type: str,
                       sel_date: str, change_map: dict) -> str:
     """返回游戏排名变化的简短分析（连续趋势 + 多平台同步），无信号时返回空串。"""
-    dates = db.available_dates()
+    dates = _cached_dates(db)
     if sel_date not in dates:
         return ""
     idx = dates.index(sel_date)
 
     history = []
     for i in range(min(5, idx + 1)):
-        rows = db.query(platform=plt_key, rank_type=rank_type, fetch_date=dates[idx + i])
+        rows = _cached_query(db, platform=plt_key, rank_type=rank_type, fetch_date=dates[idx + i])
         rank_map = {r["game_name"]: r["rank_pos"] for r in rows}
         history.append(rank_map.get(game))
 
@@ -438,7 +453,7 @@ st.sidebar.title("游戏排行榜")
 
 db = get_db()
 
-dates = db.available_dates()
+dates = _cached_dates(db)
 if not dates:
     st.warning("数据库暂无数据，请先运行 `python main.py fetch` 抓取数据。")
     st.code("python main.py fetch", language="bash")
@@ -665,7 +680,8 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                         rating=float(r.get("rating") or 0),
                         fetch_date=r["fetch_date"],
                     )
-                    for r in db.query(
+                    for r in _cached_query(
+                        db,
                         platform=sel_platform,
                         rank_type=sel_rank_type,
                         fetch_date=sel_date,
@@ -706,7 +722,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
             )
         _trend_plt_key = plt_label_to_key.get(sel_trend_plt_label, "") if sel_trend_plt_label else ""
         if sel_game and _trend_plt_key and sel_rank_type:
-            trend_rows = db.trend(sel_game, _trend_plt_key, sel_rank_type)
+            trend_rows = _cached_trend(db, sel_game, _trend_plt_key, sel_rank_type)
             if len(trend_rows) > 1:
                 tdf = pd.DataFrame(trend_rows)
                 tdf.columns = ["日期", "排名"]
@@ -743,7 +759,7 @@ _OVERSEAS_RANK_TYPES = {"download", "revenue", "active"}
 def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: str = "mobile"):
     st.title("海外排行榜 · 移动" if section == "mobile" else "海外排行榜 · PC")
 
-    overseas_dates = db.available_dates()
+    overseas_dates = _cached_dates(db)
     if not overseas_dates:
         st.info("暂无海外数据，请先运行 `python main.py fetch` 抓取数据。")
         st.code("python main.py fetch", language="bash")
@@ -754,23 +770,17 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
     # 海外只有下载榜/畅销榜，若侧边栏选了不支持的类型则回落到下载榜
     rank_type_ov = sel_rank_type if sel_rank_type in _OVERSEAS_RANK_TYPES else "download"
 
-    # Load data for each overseas platform
-    present_plts = []
-    plt_data: dict[str, list] = {}
-    for plt_key in _OVERSEAS_PLT_ORDER:
-        rows = db.query(platform=plt_key, rank_type=rank_type_ov, fetch_date=active_date)
-        if rows:
-            present_plts.append(plt_key)
-            plt_data[plt_key] = rows
+    # One batch query for all overseas platforms, then group by platform in Python
+    _all_rows = _cached_query(db, rank_type=rank_type_ov, fetch_date=active_date)
+    _all_grouped: dict[str, list] = {}
+    for _r in _all_rows:
+        _all_grouped.setdefault(_r["platform"], []).append(_r)
 
-    # Pre-load PC data too, so we can check if any data exists at all
-    pc_plts_pre = []
-    pc_data_pre: dict[str, list] = {}
-    for plt_key in _PC_PLT_ORDER:
-        rows = db.query(platform=plt_key, rank_type=rank_type_ov, fetch_date=active_date)
-        if rows:
-            pc_plts_pre.append(plt_key)
-            pc_data_pre[plt_key] = rows
+    present_plts = [k for k in _OVERSEAS_PLT_ORDER if _all_grouped.get(k)]
+    plt_data: dict[str, list] = {k: _all_grouped[k] for k in present_plts}
+
+    pc_plts_pre = [k for k in _PC_PLT_ORDER if _all_grouped.get(k)]
+    pc_data_pre: dict[str, list] = {k: _all_grouped[k] for k in pc_plts_pre}
 
     if not present_plts and not pc_plts_pre:
         st.info(f"当前日期 {active_date} 暂无海外数据，请先抓取。")
@@ -936,7 +946,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
                 )
             _trend_plt_key = lbl_to_key.get(sel_trend_plt_label, "") if sel_trend_plt_label else ""
             if sel_game and _trend_plt_key:
-                trend_rows = db.trend(sel_game, _trend_plt_key, rank_type_ov)
+                trend_rows = _cached_trend(db, sel_game, _trend_plt_key, rank_type_ov)
                 if len(trend_rows) > 1:
                     tdf = pd.DataFrame(trend_rows)
                     tdf.columns = ["日期", "排名"]
