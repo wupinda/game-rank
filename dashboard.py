@@ -734,9 +734,9 @@ _OVERSEAS_PLT_ORDER = [
     "googleplay_jp", "googleplay_kr", "googleplay_gb",
 ]
 _PC_PLT_ORDER = [
-    "steam_us", "steam_jp", "steam_kr", "steam_gb",
-    "epicgames",
-    "msstore_us", "msstore_jp", "msstore_kr", "msstore_gb",
+    "steam_us", "epicgames", "msstore_us",
+    "steam_jp", "steam_kr", "steam_gb",
+    "msstore_jp", "msstore_kr", "msstore_gb",
 ]
 _OVERSEAS_RANK_TYPES = {"download", "revenue", "active"}
 
