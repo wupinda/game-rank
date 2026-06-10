@@ -589,6 +589,13 @@ def render_data(sel_date, sel_platform, sel_rank_type):
         ).reset_index()
         game_cols = [c for c in _sel_plt_labels if c in pivot.columns]
 
+        # ── 搜索框 ──────────────────────────────────────────────────────────
+        search_query = st.text_input(
+            "", placeholder="搜索游戏名...",
+            key=f"search_dom_{sel_date}_{sel_rank_type}",
+            label_visibility="collapsed",
+        )
+
         # 构建 HTML 表格（Apple 风格，无竖线）
         COL_W   = "width:220px;min-width:220px;max-width:220px"
         th_style = (f"padding:10px 16px;border-bottom:1px solid #f2f2f7;text-align:left;"
@@ -601,6 +608,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
             f'<th style="{th_base}">{col}</th>' for col in game_cols
         )
 
+        match_count = 0
         rows_html = ""
         for _, row in pivot.iterrows():
             rank_val = int(row["排名"])
@@ -616,12 +624,16 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                 plt_key = plt_label_to_key.get(col, "")
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
+                _is_match = bool(search_query) and search_query.lower() in str(game).lower()
+                if _is_match:
+                    match_count += 1
+                _td = td_game + (";background-color:#fff3cd" if _is_match else "")
                 cell_inner = (
                     f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
-                cells += f'<td style="{td_game}">{cell_inner}</td>'
+                cells += f'<td style="{_td}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
 
         title_str = f'{RANK_TYPES.get(sel_rank_type, sel_rank_type)} — Top 20 对比'
@@ -652,6 +664,11 @@ def render_data(sel_date, sel_platform, sel_rank_type):
           </div>
         </div>
         """
+        if search_query:
+            if match_count:
+                st.caption(f"找到 {match_count} 处匹配")
+            else:
+                st.warning(f"未找到包含「{search_query}」的游戏")
         st.html(table_html)
 
         # ── 渠道选择（表格下方）──────────────────────────────────────────────
@@ -797,7 +814,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
     _th_rank = f"{_th_style};width:56px;min-width:56px"
     _th_game = f"{_th_style};{_COL_W}"
 
-    def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title=""):
+    def _render_table(rank_maps, plt_keys, plt_lbls, max_rank, section_title="", search=""):
         header = f'<th style="{_th_rank}">排名</th>' + "".join(
             f'<th style="{_th_game}">{lbl}</th>' for lbl in plt_lbls
         )
@@ -814,12 +831,14 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
                     continue
                 chg   = change_map.get((plt_key, game), None) if change_map else None
                 badge = _ap_badge(chg)
+                _is_match = bool(search) and search.lower() in game.lower()
+                _td = td_game + (";background-color:#fff3cd" if _is_match else "")
                 cell_inner = (
                     f'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">'
                     f'<span style="color:#1d1d1f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{game}</span>'
                     f'{badge}</div>'
                 )
-                cells += f'<td style="{td_game}">{cell_inner}</td>'
+                cells += f'<td style="{_td}">{cell_inner}</td>'
             rows_html += f'<tr class="ap-tr">{cells}</tr>'
         card_hdr = (
             f'<div style="padding:16px 20px;border-bottom:1px solid #f2f2f7">'
@@ -911,7 +930,25 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
 
         rank_maps = {k: {r["rank_pos"]: r["game_name"] for r in data[k]} for k in active_plts}
         max_rank  = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
-        st.html(_render_table(rank_maps, active_plts, active_labels, max_rank))
+
+        # ── 搜索框 ──────────────────────────────────────────────────────────
+        _sq_key = f"{key_prefix}_search_{active_date}_{rank_type_ov}"
+        search_query = st.text_input(
+            "", placeholder="搜索游戏名...",
+            key=_sq_key,
+            label_visibility="collapsed",
+        )
+        if search_query:
+            _match_count = sum(
+                1 for k in active_plts for r in data[k]
+                if search_query.lower() in r["game_name"].lower()
+            )
+            if _match_count:
+                st.caption(f"找到 {_match_count} 处匹配")
+            else:
+                st.warning(f"未找到包含「{search_query}」的游戏")
+
+        st.html(_render_table(rank_maps, active_plts, active_labels, max_rank, search=search_query))
 
         # 展示渠道（表格下方）
         st.multiselect("展示渠道", options=labels_all, default=labels_all, key=_ms_key)
