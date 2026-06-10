@@ -874,57 +874,85 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
         if sections:
             st.html(_dynamic_card_html(sections))
 
+    def _render_section(plts, data, key_prefix):
+        """渲染单个海外区块：今日动态 → 排行表 → 展示渠道（表格下方）→ 排名趋势"""
+        labels_all  = [PLATFORMS.get(k, k) for k in plts]
+        lbl_to_key  = {PLATFORMS.get(k, k): k for k in plts}
+
+        _render_summary(set(plts), active_date)
+
+        # session_state 模式：先读取上次选择，multiselect 渲染在表格之后
+        _ms_key = f"{key_prefix}_{active_date}_{rank_type_ov}"
+        _sel_labels = st.session_state.get(_ms_key, labels_all)
+        if not _sel_labels:
+            _sel_labels = labels_all
+        active_plts  = [lbl_to_key[l] for l in _sel_labels if l in lbl_to_key]
+        active_labels = _sel_labels
+
+        rank_maps = {k: {r["rank_pos"]: r["game_name"] for r in data[k]} for k in active_plts}
+        max_rank  = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
+        st.html(_render_table(rank_maps, active_plts, active_labels, max_rank))
+
+        # 展示渠道（表格下方）
+        st.multiselect("展示渠道", options=labels_all, default=labels_all, key=_ms_key)
+
+        # 排名趋势
+        st.divider()
+        st.subheader("排名趋势")
+        all_games = sorted({
+            r["game_name"] for k in active_plts for r in data[k]
+        })
+        if all_games:
+            tr_c1, tr_c2 = st.columns([3, 1])
+            with tr_c1:
+                sel_game = st.selectbox(
+                    "选择游戏",
+                    options=all_games,
+                    index=None,
+                    placeholder="输入游戏名搜索…",
+                    key=f"{key_prefix}_game_{active_date}_{rank_type_ov}",
+                )
+            with tr_c2:
+                _trend_plt_labels = sorted({
+                    PLATFORMS.get(k, k) for k in active_plts
+                    if any(r["game_name"] == sel_game for r in data[k])
+                }) if sel_game else []
+                sel_trend_plt_label = (
+                    st.selectbox(
+                        "选择平台", _trend_plt_labels,
+                        key=f"{key_prefix}_plt_{active_date}_{rank_type_ov}",
+                    )
+                    if _trend_plt_labels else None
+                )
+            _trend_plt_key = lbl_to_key.get(sel_trend_plt_label, "") if sel_trend_plt_label else ""
+            if sel_game and _trend_plt_key:
+                trend_rows = db.trend(sel_game, _trend_plt_key, rank_type_ov)
+                if len(trend_rows) > 1:
+                    tdf = pd.DataFrame(trend_rows)
+                    tdf.columns = ["日期", "排名"]
+                    fig = px.line(
+                        tdf, x="日期", y="排名", markers=True,
+                        title=f"{sel_game} 排名趋势（{sel_trend_plt_label} · {RANK_TYPES.get(rank_type_ov, rank_type_ov)}）",
+                    )
+                    fig.update_yaxes(autorange="reversed")
+                    st.plotly_chart(fig, width="stretch")
+                else:
+                    st.info("需要多天数据才能显示趋势图，请继续每日抓取。")
+            else:
+                st.info("请选择游戏和平台后查看趋势。")
+
     if section == "mobile":
         if present_plts:
-            _mob_labels_all = [PLATFORMS.get(k, k) for k in present_plts]
-            _mob_lbl_to_key = {PLATFORMS.get(k, k): k for k in present_plts}
-
-            _render_summary(set(present_plts), active_date)
-
-            _sel_mob_labels = st.multiselect(
-                "展示渠道",
-                options=_mob_labels_all,
-                default=_mob_labels_all,
-                key=f"mob_plt_sort_{active_date}_{rank_type_ov}",
-            )
-            present_plts = [_mob_lbl_to_key[l] for l in _sel_mob_labels if l in _mob_lbl_to_key]
-            plt_labels = _sel_mob_labels
-
-            rank_maps: dict[str, dict[int, str]] = {
-                k: {r["rank_pos"]: r["game_name"] for r in plt_data[k]} for k in present_plts
-            }
-            max_rank = max((max(rm.keys()) for rm in rank_maps.values() if rm), default=20)
-            st.html(_render_table(rank_maps, present_plts, plt_labels, max_rank))
+            _render_section(present_plts, plt_data, "mob_plt_sort")
         else:
             st.info("移动平台暂无该榜单数据。")
 
     else:  # section == "pc"
-        pc_plts = pc_plts_pre
-        pc_data = pc_data_pre
-
-        if not pc_plts:
+        if not pc_plts_pre:
             st.info(f"当前日期 {active_date} 暂无 PC 平台数据，请先抓取。")
             st.code("python main.py fetch --platform steam_us epicgames msstore_us", language="bash")
         else:
-            _pc_labels_all = [PLATFORMS.get(k, k) for k in pc_plts]
-            _pc_lbl_to_key = {PLATFORMS.get(k, k): k for k in pc_plts}
-
-            _render_summary(set(pc_plts), active_date)
-
-            _sel_pc_labels = st.multiselect(
-                "展示渠道",
-                options=_pc_labels_all,
-                default=_pc_labels_all,
-                key=f"pc_plt_sort_{active_date}_{rank_type_ov}",
-            )
-            pc_plts = [_pc_lbl_to_key[l] for l in _sel_pc_labels if l in _pc_lbl_to_key]
-            pc_labels = _sel_pc_labels
-
-            pc_rank_maps: dict[str, dict[int, str]] = {
-                k: {r["rank_pos"]: r["game_name"] for r in pc_data[k]} for k in pc_plts
-            }
-            pc_max_rank = max((max(rm.keys()) for rm in pc_rank_maps.values() if rm), default=20)
-            st.html(_render_table(pc_rank_maps, pc_plts, pc_labels, pc_max_rank))
+            _render_section(pc_plts_pre, pc_data_pre, "pc_plt_sort")
 
 
 _LAUNCH_TYPE_STYLE = {
