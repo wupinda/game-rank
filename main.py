@@ -19,7 +19,7 @@ import yaml
 from rich.console import Console
 from rich.table import Table
 
-console = Console(highlight=False)
+console = Console(highlight=False, stderr=False, legacy_windows=False)
 
 
 def load_config(config_path: str = "config.yaml") -> dict:
