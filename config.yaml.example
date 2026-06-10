@@ -24,6 +24,11 @@ platforms:
   kuaibao: true
   wegame: true
   myapp: true
+  # 海外移动平台
+  appgallery: true    # 华为 AppGallery
+  galaxystore: true   # 三星 Galaxy Store
+  getapps: true       # 小米 GetApps（国际版）
+  amazon: true        # Amazon Appstore
 
 logging:
   level: INFO

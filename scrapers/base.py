@@ -34,6 +34,11 @@ PLATFORMS = {
     "googleplay_jp": "Google Play (JP)",
     "googleplay_kr": "Google Play (KR)",
     "googleplay_gb": "Google Play (GB)",
+    # 海外其他移动平台
+    "appgallery":  "AppGallery",
+    "galaxystore": "Galaxy Store",
+    "getapps":     "GetApps",
+    "amazon":      "Amazon Appstore",
     # PC 平台
     "steam_us":   "Steam (US)",
     "steam_jp":   "Steam (JP)",

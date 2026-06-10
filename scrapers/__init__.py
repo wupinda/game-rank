@@ -11,6 +11,10 @@ from .kuaibao_timeline  import KuaibaoTimelineScraper
 from .wegame_launch     import WeGameLaunchScraper
 from .xiaomi_new        import XiaomiNewScraper
 from .rustore            import RuStoreScraper
+from .appgallery         import AppGalleryScraper
+from .galaxystore        import GalaxyStoreScraper
+from .getapps            import GetAppsScraper
+from .amazon_appstore    import AmazonAppStoreScraper
 from .appstore_overseas  import AppStoreUSScraper, AppStoreJPScraper, AppStoreKRScraper, AppStoreGBScraper
 from .googleplay         import GooglePlayScraper
 from .googleplay_overseas import GooglePlayUSScraper, GooglePlayJPScraper, GooglePlayKRScraper, GooglePlayGBScraper
@@ -30,7 +34,11 @@ ALL_SCRAPERS = {
     "wegame":   WeGameScraper,
     "myapp":    MyAppScraper,
     # 海外移动平台
-    "rustore":    RuStoreScraper,
+    "rustore":     RuStoreScraper,
+    "appgallery":  AppGalleryScraper,
+    "galaxystore": GalaxyStoreScraper,
+    "getapps":     GetAppsScraper,
+    "amazon":      AmazonAppStoreScraper,
     "appstore_us": AppStoreUSScraper,
     "appstore_jp": AppStoreJPScraper,
     "appstore_kr": AppStoreKRScraper,
