@@ -1329,7 +1329,7 @@ def render_competitor_monitor(db: Database):
             key="comp_trend_plt",
         ) if plts_for_game else None
     with tr_c3:
-        _rt_opts = {"下载榜": "download", "畅销榜": "revenue", "活跃榜": "active"}
+        _rt_opts = {"下载榜": "download", "畅销榜": "revenue", "预约榜": "reservation", "活跃榜": "active"}
         sel_comp_rt_label = st.selectbox("榜单类型", list(_rt_opts.keys()), key="comp_trend_rt")
         sel_comp_rt = _rt_opts[sel_comp_rt_label]
 
