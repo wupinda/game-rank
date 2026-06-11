@@ -1192,7 +1192,14 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
 
 @st.cache_data(ttl=300)
 def _cached_platforms_for_game(_db, game_name):
-    return _db.get_platforms_for_game(game_name)
+    rows = (
+        _db._client.table("rankings")
+        .select("platform")
+        .eq("game_name", game_name)
+        .execute()
+        .data
+    )
+    return sorted({r["platform"] for r in rows})
 
 
 @st.cache_data(ttl=60)
