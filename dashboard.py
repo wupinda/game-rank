@@ -757,6 +757,7 @@ def render_data(sel_date, sel_platform, sel_rank_type):
                     title=f"{sel_game} 排名趋势（{sel_trend_plt_label} · {RANK_TYPES.get(sel_rank_type, sel_rank_type)}）",
                 )
                 fig.update_yaxes(autorange="reversed")
+                fig.update_xaxes(dtick=86400000, tickformat="%m/%d")
                 st.plotly_chart(fig, width="stretch")
             else:
                 st.info("需要多天数据才能显示趋势图，请继续每日抓取。")
@@ -1001,6 +1002,7 @@ def render_overseas(db: Database, sel_date: str, sel_rank_type: str, section: st
                         title=f"{sel_game} 排名趋势（{sel_trend_plt_label} · {RANK_TYPES.get(rank_type_ov, rank_type_ov)}）",
                     )
                     fig.update_yaxes(autorange="reversed")
+                    fig.update_xaxes(dtick=86400000, tickformat="%m/%d")
                     st.plotly_chart(fig, width="stretch")
                 else:
                     st.info("需要多天数据才能显示趋势图，请继续每日抓取。")
@@ -1343,6 +1345,7 @@ def render_competitor_monitor(db: Database):
                 title=f"{sel_comp_game} · {PLATFORMS.get(sel_comp_plt, sel_comp_plt)} · {RANK_TYPES.get(sel_comp_rt, sel_comp_rt)}",
             )
             fig.update_yaxes(autorange="reversed")
+            fig.update_xaxes(dtick=86400000, tickformat="%m/%d")
             st.plotly_chart(fig, width="stretch")
         else:
             st.info("需要多天数据才能显示趋势图。")
