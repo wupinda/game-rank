@@ -1318,9 +1318,9 @@ def render_competitor_monitor(db: Database):
     with tr_c1:
         sel_comp_game = st.selectbox("游戏", comp_names, key="comp_trend_game")
     with tr_c2:
-        all_date_rows = _cached_dates(db)
+        _latest_date = dates[0] if dates else None
         plts_for_game = sorted({
-            r["platform"] for r in _cached_query(db)
+            r["platform"] for r in _cached_query(db, fetch_date=_latest_date)
             if r["game_name"] == sel_comp_game
         }) if sel_comp_game else []
         sel_comp_plt = st.selectbox(
