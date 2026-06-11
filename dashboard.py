@@ -1213,7 +1213,7 @@ def render_competitor_monitor(db: Database):
         if st.button("添加监控", key="comp_add_btn"):
             if new_game.strip():
                 db.add_competitor(new_game.strip())
-                st.cache_data.clear()
+                _cached_competitors.clear()
                 st.rerun()
             else:
                 st.warning("请输入游戏名称")
@@ -1234,7 +1234,7 @@ def render_competitor_monitor(db: Database):
             with c2:
                 if st.button("删除", key=f"comp_del_{comp['game_name']}"):
                     db.remove_competitor(comp["game_name"])
-                    st.cache_data.clear()
+                    _cached_competitors.clear()
                     st.rerun()
     else:
         st.info("尚未添加监控游戏，请在上方输入游戏名后点击「添加监控」。")
