@@ -69,12 +69,19 @@ def run_fetch(cfg: dict, platform_filter: str = None) -> list:
     proxies = get_proxies(cfg)
     top_n   = cfg["general"].get("top_n", 20)
     enabled = cfg.get("platforms", {})
+    today   = date.today().isoformat()
+
+    # 查询今日已有数据的平台，跳过无需重复抓取
+    existing_today = {r["platform"] for r in db.query(fetch_date=today)}
 
     all_items = []
     for key, scraper_cls in ALL_SCRAPERS.items():
         if platform_filter and key != platform_filter:
             continue
         if not enabled.get(key, True):
+            continue
+        if key in existing_today:
+            console.print(f"  [dim]{PLATFORMS.get(key, key)} 今日数据已存在，跳过[/dim]")
             continue
         scraper = scraper_cls(proxies=proxies)
         scraper.TOP_N = top_n
@@ -101,9 +108,15 @@ def run_fetch_launches(cfg: dict) -> list:
     enabled = cfg.get("platforms", {})
     today   = date.today().isoformat()
 
+    # 查询今日已有开测数据的平台，跳过无需重复抓取
+    existing_launches_today = {r["platform"] for r in db.query_launches(fetch_date=today)}
+
     all_items = []
     for key, scraper_cls in ALL_LAUNCH_SCRAPERS.items():
         if not enabled.get(key, True):
+            continue
+        if key in existing_launches_today:
+            console.print(f"  [dim]{PLATFORMS.get(key, key)} 今日开测数据已存在，跳过[/dim]")
             continue
         scraper = scraper_cls(proxies=proxies)
         try:
