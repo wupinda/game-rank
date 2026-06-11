@@ -119,6 +119,16 @@ class Database:
     def available_platforms(self) -> List[str]:
         return [r["platform"] for r in self._client.rpc("get_rank_platforms").execute().data]
 
+    def get_platforms_for_game(self, game_name: str) -> List[str]:
+        rows = (
+            self._client.table("rankings")
+            .select("platform")
+            .eq("game_name", game_name)
+            .execute()
+            .data
+        )
+        return sorted({r["platform"] for r in rows})
+
     # ── competitors ────────────────────────────────────────────────────────────
 
     def get_competitors(self) -> List[dict]:

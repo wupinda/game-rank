@@ -1190,6 +1190,11 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
     )
 
 
+@st.cache_data(ttl=300)
+def _cached_platforms_for_game(_db, game_name):
+    return _db.get_platforms_for_game(game_name)
+
+
 @st.cache_data(ttl=60)
 def _cached_competitors(_db):
     return _db.get_competitors()
@@ -1320,11 +1325,7 @@ def render_competitor_monitor(db: Database):
     with tr_c1:
         sel_comp_game = st.selectbox("游戏", comp_names, key="comp_trend_game")
     with tr_c2:
-        _latest_date = dates[0] if dates else None
-        plts_for_game = sorted({
-            r["platform"] for r in _cached_query(db, fetch_date=_latest_date)
-            if r["game_name"] == sel_comp_game
-        }) if sel_comp_game else []
+        plts_for_game = _cached_platforms_for_game(db, sel_comp_game) if sel_comp_game else []
         sel_comp_plt = st.selectbox(
             "平台", plts_for_game,
             format_func=lambda k: PLATFORMS.get(k, k),
