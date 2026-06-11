@@ -62,8 +62,11 @@ class Database:
         ]
         self._client.table("launches").insert(rows).execute()
 
-    def delete_launches_by_date(self, fetch_date: str):
-        self._client.table("launches").delete().eq("fetch_date", fetch_date).execute()
+    def delete_launches_by_date(self, fetch_date: str, platform: str = None):
+        q = self._client.table("launches").delete().eq("fetch_date", fetch_date)
+        if platform:
+            q = q.eq("platform", platform)
+        q.execute()
 
     # ── read ───────────────────────────────────────────────────────────────────
 

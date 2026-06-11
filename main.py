@@ -115,7 +115,9 @@ def run_fetch_launches(cfg: dict) -> list:
             console.print(f"  [red]FAIL[/red] {PLATFORMS.get(key, key)}: {exc}")
 
     if all_items:
-        db.delete_launches_by_date(today)
+        fetched_platforms = {it.platform for it in all_items}
+        for plt in fetched_platforms:
+            db.delete_launches_by_date(today, platform=plt)
         db.save_launches(all_items)
         console.print(f"[green]OK 保存 {len(all_items)} 条开测数据到数据库[/green]")
     return all_items
