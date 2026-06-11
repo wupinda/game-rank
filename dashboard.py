@@ -467,7 +467,7 @@ st.sidebar.markdown(
 st.sidebar.divider()
 
 # 页签导航（放最前，后续选项依赖它）
-_PAGES = ["国内排行榜", "国内开测表", "海外排行榜-移动", "海外排行榜-PC"]
+_PAGES = ["国内排行榜", "国内开测表", "海外排行榜-移动", "海外排行榜-PC", "竞品监控"]
 sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="visible")
 st.sidebar.divider()
 
@@ -476,7 +476,9 @@ sel_date = st.sidebar.selectbox("日期", dates, index=0)
 sel_platform = None
 
 # 榜单类型——海外只显示下载榜/畅销榜/活跃榜（活跃榜仅 Steam 有）
-if sel_page == "国内开测表":
+if sel_page in ("竞品监控",):
+    sel_rank_type = None
+elif sel_page == "国内开测表":
     sel_rank_type = None
 elif sel_page in ("海外排行榜-移动", "海外排行榜-PC"):
     _overseas_rank_opts = {"下载榜": "download", "畅销榜": "revenue", "活跃榜": "active"}
@@ -1186,6 +1188,168 @@ def render_launches(db: Database, sel_date: str, sel_platform=None):
     )
 
 
+@st.cache_data(ttl=60)
+def _cached_competitors(_db):
+    return _db.get_competitors()
+
+
+@st.cache_data(ttl=60)
+def _cached_anomalies(_db, days=30):
+    return _db.get_anomalies(days=days)
+
+
+def render_competitor_monitor(db: Database):
+    st.title("竞品监控")
+
+    # ── 竞品管理 ──────────────────────────────────────────────────────────────
+    st.subheader("竞品游戏管理")
+    col_add1, col_add2 = st.columns([3, 1])
+    with col_add1:
+        new_game = st.text_input(
+            "", placeholder="输入游戏名称（需与排行榜中显示名一致）",
+            key="comp_add_name", label_visibility="collapsed",
+        )
+    with col_add2:
+        if st.button("添加监控", key="comp_add_btn"):
+            if new_game.strip():
+                db.add_competitor(new_game.strip())
+                st.cache_data.clear()
+                st.rerun()
+            else:
+                st.warning("请输入游戏名称")
+
+    competitors = _cached_competitors(db)
+    if competitors:
+        for comp in competitors:
+            c1, c2 = st.columns([5, 1])
+            with c1:
+                st.markdown(
+                    f'<div style="padding:8px 0;font-size:14px;color:#1d1d1f;font-family:{_AP_FONT}">'
+                    f'<b>{comp["game_name"]}</b>'
+                    + (f' <span style="color:#6e6e73;font-size:12px">— {comp["notes"]}</span>'
+                       if comp.get("notes") else "")
+                    + "</div>",
+                    unsafe_allow_html=True,
+                )
+            with c2:
+                if st.button("删除", key=f"comp_del_{comp['game_name']}"):
+                    db.remove_competitor(comp["game_name"])
+                    st.cache_data.clear()
+                    st.rerun()
+    else:
+        st.info("尚未添加监控游戏，请在上方输入游戏名后点击「添加监控」。")
+
+    st.divider()
+
+    # ── 异动播报 ──────────────────────────────────────────────────────────────
+    st.subheader("异动播报（近 30 天）")
+
+    anomalies = _cached_anomalies(db, days=30)
+    if not anomalies:
+        st.info("暂无异动记录。每日运行 `python main.py competitor` 后，检测到异动会自动出现在此处。")
+    else:
+        for rec in anomalies:
+            game_name    = rec["game_name"]
+            fetch_date   = rec["fetch_date"]
+            rank_changes = rec.get("rank_changes") or {}
+            details      = rec.get("platform_details") or {}
+            analysis     = rec.get("ai_analysis") or ""
+            plts_changed = rec.get("platforms_changed") or []
+
+            # 构建平台变化行
+            chg_parts = []
+            for plt, chg in rank_changes.items():
+                t, y = chg.get("today"), chg.get("yesterday")
+                if t is None:
+                    chg_parts.append(f"{plt}: 跌出榜")
+                elif y is None:
+                    chg_parts.append(f"{plt}: 新进榜 #{t}")
+                else:
+                    arrow = "↑" if y > t else "↓"
+                    chg_parts.append(f"{plt}: #{y}→#{t} {arrow}{abs(y - t)}")
+
+            # 评分行
+            rating_parts = []
+            for plt, d in details.items():
+                if d.get("rating"):
+                    rating_parts.append(f"{plt} ⭐{d['rating']}")
+
+            # 版本/更新内容
+            whatsnew_parts = []
+            for plt, d in details.items():
+                if d.get("whatsnew"):
+                    ver = f"v{d['version']} " if d.get("version") else ""
+                    whatsnew_parts.append(f"**{plt}** {ver}— {d['whatsnew'][:150]}")
+
+            card_html = f"""
+            <div style="background:#fff;border-radius:18px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+                        overflow:hidden;border:1px solid #e8e8ed;margin-bottom:16px;
+                        padding:20px 24px;font-family:{_AP_FONT}">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+                <div>
+                  <span style="font-size:17px;font-weight:700;color:#1d1d1f">{game_name}</span>
+                  <span style="font-size:12px;color:#6e6e73;margin-left:10px">{fetch_date}</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  {"".join(f'<span style="background:#f5f5f7;border:1px solid #d2d2d7;border-radius:20px;padding:3px 10px;font-size:12px;color:#1d1d1f">{p}</span>' for p in plts_changed)}
+                </div>
+              </div>
+              <div style="font-size:13px;color:#1d1d1f;margin-bottom:8px;line-height:1.6">
+                {"&nbsp;&nbsp;|&nbsp;&nbsp;".join(chg_parts)}
+              </div>
+              {('<div style="font-size:12px;color:#6e6e73;margin-bottom:8px">' + "&nbsp;&nbsp;".join(rating_parts) + "</div>") if rating_parts else ""}
+              {('<div style="font-size:12px;color:#6e6e73;border-top:1px solid #f2f2f7;padding-top:8px;margin-bottom:8px;line-height:1.6">' + "<br>".join(p.replace("**","<b>",1).replace("**","</b>",1) for p in whatsnew_parts) + "</div>") if whatsnew_parts else ""}
+              {"" if not analysis else f'<div style="font-size:13px;color:#1d1d1f;background:#f9f9fb;border-radius:10px;padding:12px 14px;line-height:1.7">{analysis}</div>'}
+            </div>
+            """
+            st.html(card_html)
+
+    st.divider()
+
+    # ── 排名趋势 ──────────────────────────────────────────────────────────────
+    st.subheader("排名趋势")
+    competitors_now = _cached_competitors(db)
+    comp_names = [c["game_name"] for c in competitors_now]
+    if not comp_names:
+        st.info("请先添加监控游戏。")
+        return
+
+    tr_c1, tr_c2, tr_c3, tr_c4 = st.columns([3, 2, 2, 1])
+    with tr_c1:
+        sel_comp_game = st.selectbox("游戏", comp_names, key="comp_trend_game")
+    with tr_c2:
+        all_date_rows = _cached_dates(db)
+        plts_for_game = sorted({
+            r["platform"] for r in _cached_query(db)
+            if r["game_name"] == sel_comp_game
+        }) if sel_comp_game else []
+        sel_comp_plt = st.selectbox(
+            "平台", plts_for_game,
+            format_func=lambda k: PLATFORMS.get(k, k),
+            key="comp_trend_plt",
+        ) if plts_for_game else None
+    with tr_c3:
+        _rt_opts = {"下载榜": "download", "畅销榜": "revenue", "活跃榜": "active"}
+        sel_comp_rt_label = st.selectbox("榜单类型", list(_rt_opts.keys()), key="comp_trend_rt")
+        sel_comp_rt = _rt_opts[sel_comp_rt_label]
+
+    if sel_comp_game and sel_comp_plt:
+        trend_rows = _cached_trend(db, sel_comp_game, sel_comp_plt, sel_comp_rt)
+        if len(trend_rows) > 1:
+            tdf = pd.DataFrame(trend_rows)
+            tdf.columns = ["日期", "排名"]
+            fig = px.line(
+                tdf, x="日期", y="排名", markers=True,
+                title=f"{sel_comp_game} · {PLATFORMS.get(sel_comp_plt, sel_comp_plt)} · {RANK_TYPES.get(sel_comp_rt, sel_comp_rt)}",
+            )
+            fig.update_yaxes(autorange="reversed")
+            st.plotly_chart(fig, width="stretch")
+        else:
+            st.info("需要多天数据才能显示趋势图。")
+    else:
+        st.info("请选择游戏和平台。")
+
+
 # ── 主体 ────────────────────────────────────────────────────────────────────
 if sel_page == "国内排行榜":
     render_data(sel_date, sel_platform, sel_rank_type)
@@ -1196,5 +1360,8 @@ elif sel_page == "国内开测表":
 elif sel_page == "海外排行榜-移动":
     render_overseas(db, sel_date, sel_rank_type, section="mobile")
 
-else:
+elif sel_page == "海外排行榜-PC":
     render_overseas(db, sel_date, sel_rank_type, section="pc")
+
+else:
+    render_competitor_monitor(db)

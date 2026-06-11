@@ -12,7 +12,7 @@
 import os
 import sys
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 import click
 import yaml
@@ -37,6 +37,16 @@ def load_config(config_path: str = "config.yaml") -> dict:
         "logging":  {"level": "INFO", "file": "/tmp/game_rank.log"},
         "proxy":    {"enabled": False},
     }
+
+
+def inject_llm_proxy_env(cfg: dict):
+    proxy = cfg.get("llm_proxy", {})
+    if proxy.get("api_key") and not os.environ.get("LLM_PROXY_API_KEY"):
+        os.environ["LLM_PROXY_API_KEY"] = proxy["api_key"]
+    if proxy.get("base_url") and not os.environ.get("LLM_PROXY_BASE_URL"):
+        os.environ["LLM_PROXY_BASE_URL"] = proxy["base_url"]
+    if proxy.get("model") and not os.environ.get("LLM_PROXY_MODEL"):
+        os.environ["LLM_PROXY_MODEL"] = proxy["model"]
 
 
 def setup_logging(cfg: dict):
@@ -142,6 +152,7 @@ def cli(ctx):
     ctx.ensure_object(dict)
     cfg = load_config()
     setup_logging(cfg)
+    inject_llm_proxy_env(cfg)
     ctx.obj["cfg"] = cfg
 
 
@@ -252,6 +263,108 @@ def dashboard(ctx):
         [sys.executable, "-m", "streamlit", "run", "dashboard.py"],
         cwd=os.path.dirname(os.path.abspath(__file__)),
     )
+
+
+def is_anomaly(rank_today, rank_yesterday) -> bool:
+    if rank_today is None and rank_yesterday is not None:
+        return True
+    if rank_today is not None and rank_yesterday is None:
+        return True
+    if rank_today and rank_yesterday:
+        return abs(rank_yesterday - rank_today) > 5
+    return False
+
+
+def run_competitor_check(cfg: dict):
+    from scrapers import ALL_SCRAPERS
+    from scrapers.competitor_monitor import CompetitorMonitor
+    from storage import Database
+
+    db      = Database(url=cfg["supabase"]["url"], key=cfg["supabase"]["key"])
+    proxies = get_proxies(cfg)
+    today   = date.today().isoformat()
+    yesterday = (date.today() - timedelta(1)).isoformat()
+
+    competitors = db.get_competitors()
+    if not competitors:
+        console.print("[yellow]未配置监控竞品，请先在竞品监控页签添加游戏[/yellow]")
+        return
+
+    today_rows    = db.query(fetch_date=today)
+    yesterday_rows = db.query(fetch_date=yesterday)
+
+    today_idx    = {(r["platform"], r["game_name"]): r for r in today_rows}
+    yesterday_idx = {(r["platform"], r["game_name"]): r for r in yesterday_rows}
+
+    all_platforms = list(ALL_SCRAPERS.keys())
+    monitor = CompetitorMonitor(proxies=proxies)
+
+    for comp in competitors:
+        game = comp["game_name"]
+        rank_changes: dict = {}
+        platforms_hit: list = []
+
+        for plt in all_platforms:
+            t = today_idx.get((plt, game))
+            y = yesterday_idx.get((plt, game))
+            rank_t = t["rank_pos"] if t else None
+            rank_y = y["rank_pos"] if y else None
+            if is_anomaly(rank_t, rank_y):
+                change = (rank_y or 0) - (rank_t or 0)
+                rank_changes[plt] = {"today": rank_t, "yesterday": rank_y, "change": change}
+                platforms_hit.append(plt)
+
+        if not platforms_hit:
+            continue
+
+        significant  = any(abs(v["change"]) > 5 for v in rank_changes.values())
+        multi_plt    = len(platforms_hit) >= 2
+        if not (significant or multi_plt):
+            continue
+
+        console.print(f"\n[bold cyan]{game}[/bold cyan] 检测到排名异动：{', '.join(platforms_hit)}")
+
+        platform_details: dict = {}
+        for plt in platforms_hit:
+            app_id = next(
+                (r["game_id"] for r in today_rows if r["game_name"] == game and r["platform"] == plt),
+                None,
+            )
+            if app_id:
+                detail = monitor.fetch_platform_detail(plt, app_id)
+                if detail:
+                    platform_details[plt] = detail
+
+        all_reviews: list = []
+        for plt, d in platform_details.items():
+            for rev in (d.get("reviews") or []):
+                all_reviews.append(f"[{plt}] {rev}")
+        reviews_sample = "\n---\n".join(all_reviews)[:3000]
+
+        console.print(f"  深度抓取完成，共 {len(platform_details)} 个平台有详情")
+        analysis = monitor.analyze_with_ai(game, rank_changes, platform_details, reviews_sample)
+        console.print(f"  AI 分析：{analysis[:100]}…")
+
+        db.save_anomaly({
+            "game_name":        game,
+            "fetch_date":       today,
+            "platforms_changed": platforms_hit,
+            "rank_changes":     rank_changes,
+            "platform_details": {
+                plt: {k: v for k, v in d.items() if k != "reviews"}
+                for plt, d in platform_details.items()
+            },
+            "reviews_sample":   reviews_sample,
+            "ai_analysis":      analysis,
+        })
+        console.print(f"  [green]OK 异动记录已保存[/green]")
+
+
+@cli.command()
+@click.pass_context
+def competitor(ctx):
+    """检测竞品排名异动，有异动时深度抓取并 AI 分析"""
+    run_competitor_check(ctx.obj["cfg"])
 
 
 @cli.command()

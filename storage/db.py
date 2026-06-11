@@ -119,6 +119,38 @@ class Database:
     def available_platforms(self) -> List[str]:
         return [r["platform"] for r in self._client.rpc("get_rank_platforms").execute().data]
 
+    # ── competitors ────────────────────────────────────────────────────────────
+
+    def get_competitors(self) -> List[dict]:
+        return self._client.table("competitors").select("*").order("game_name").execute().data
+
+    def add_competitor(self, game_name: str, notes: str = ""):
+        self._client.table("competitors").upsert(
+            {"game_name": game_name, "notes": notes},
+            on_conflict="game_name",
+        ).execute()
+
+    def remove_competitor(self, game_name: str):
+        self._client.table("competitors").delete().eq("game_name", game_name).execute()
+
+    def save_anomaly(self, record: dict):
+        self._client.table("competitor_anomalies").upsert(
+            record, on_conflict="game_name,fetch_date"
+        ).execute()
+
+    def get_anomalies(self, days: int = 30) -> List[dict]:
+        from datetime import date, timedelta
+        since = (date.today() - timedelta(days=days)).isoformat()
+        return (
+            self._client.table("competitor_anomalies")
+            .select("*")
+            .gte("fetch_date", since)
+            .order("fetch_date", desc=True)
+            .order("game_name")
+            .execute()
+            .data
+        )
+
     def trend(self, game_name: str, platform: str, rank_type: str) -> List[dict]:
         return (
             self._client.table("rankings")

@@ -31,3 +31,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python main.py fetch
+
+      - name: Competitor anomaly check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          LLM_PROXY_API_KEY: ${{ secrets.LLM_PROXY_API_KEY }}
+          LLM_PROXY_BASE_URL: "https://llm-proxy.lilithgames.com/v1"
+          LLM_PROXY_MODEL: "claude-haiku-4-5-20251001"
+        run: python main.py competitor
