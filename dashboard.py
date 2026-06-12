@@ -467,7 +467,7 @@ st.sidebar.markdown(
 st.sidebar.divider()
 
 # 页签导航（放最前，后续选项依赖它）
-_PAGES = ["国内排行榜", "国内开测表", "海外排行榜-移动", "海外排行榜-PC", "竞品监控"]
+_PAGES = ["国内排行榜", "国内开测表", "海外排行榜-移动", "海外排行榜-PC", "竞品监控（施工中）"]
 sel_page = st.sidebar.radio("页签", _PAGES, key="sel_page", label_visibility="visible")
 st.sidebar.divider()
 
@@ -476,7 +476,7 @@ sel_date = st.sidebar.selectbox("日期", dates, index=0)
 sel_platform = None
 
 # 榜单类型——海外只显示下载榜/畅销榜/活跃榜（活跃榜仅 Steam 有）
-if sel_page in ("竞品监控",):
+if sel_page in ("竞品监控（施工中）",):
     sel_rank_type = None
 elif sel_page == "国内开测表":
     sel_rank_type = None
