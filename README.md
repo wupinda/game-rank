@@ -87,6 +87,9 @@ python main.py fetch
 # 只抓取指定平台排行榜
 python main.py fetch --platform taptap
 
+# 修复抓取规则后，重新抓取并替换指定平台的今日数据（全部榜单抓取成功后才替换）
+python main.py fetch --platform kuaibao --force --no-launches
+
 # 抓取后自动导出 Excel
 python main.py fetch --export
 

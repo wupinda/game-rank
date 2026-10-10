@@ -70,10 +70,15 @@ def get_proxies(cfg: dict) -> dict:
     return None
 
 
-def run_fetch(cfg: dict, platform_filter: str = None) -> list:
+def run_fetch(cfg: dict, platform_filter: str = None, force: bool = False) -> list:
     from scrapers import ALL_SCRAPERS
     from scrapers.base import PLATFORMS
     from storage import Database
+
+    if force and platform_filter not in ALL_SCRAPERS:
+        raise click.ClickException("强制重抓必须用 --platform 指定一个有效平台。")
+    if force and not cfg.get("platforms", {}).get(platform_filter, True):
+        raise click.ClickException(f"平台 {platform_filter} 已禁用，请先启用后再重抓。")
 
     db      = Database(url=cfg["supabase"]["url"], key=cfg["supabase"]["key"])
     proxies = get_proxies(cfg)
@@ -90,12 +95,19 @@ def run_fetch(cfg: dict, platform_filter: str = None) -> list:
             continue
         if not enabled.get(key, True):
             continue
-        if key in existing_today:
+        if key in existing_today and not force:
             console.print(f"  [dim]{PLATFORMS.get(key, key)} 今日数据已存在，跳过[/dim]")
             continue
         scraper = scraper_cls(proxies=proxies)
         scraper.TOP_N = top_n
         items = scraper.fetch_all()
+        if force:
+            missing = set(scraper.SUPPORTED_RANK_TYPES) - {it.rank_type for it in items}
+            if not items or missing:
+                raise click.ClickException(
+                    f"{PLATFORMS.get(key, key)} 榜单抓取不完整，保留原数据；"
+                    f"失败榜单: {', '.join(sorted(missing)) or '全部'}"
+                )
         all_items.extend(items)
 
     if all_items:
@@ -160,11 +172,13 @@ def cli(ctx):
 @click.option("--platform", "-p", default=None, help="指定平台 (appstore/taptap/bilibili/...)")
 @click.option("--export", "-e", is_flag=True, default=False, help="抓取后自动导出 Excel")
 @click.option("--no-launches", is_flag=True, default=False, help="跳过开测表数据抓取")
+@click.option("--force", is_flag=True, default=False,
+              help="重抓指定平台的今日榜单，成功后替换旧数据；必须搭配 --platform")
 @click.pass_context
-def fetch(ctx, platform, export, no_launches):
+def fetch(ctx, platform, export, no_launches, force):
     """立即抓取所有（或指定）平台的排行榜及开测数据"""
     cfg   = ctx.obj["cfg"]
-    items = run_fetch(cfg, platform)
+    items = run_fetch(cfg, platform, force=force)
 
     if not platform and not no_launches:
         console.print("\n[bold]抓取开测数据…[/bold]")
